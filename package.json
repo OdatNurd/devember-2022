@@ -8,9 +8,18 @@
     "email": "odatnurd@gmail.com",
     "url": "https://odatnurd.net"
   },
+  "engines": {
+    "node": "19.x",
+    "yarn": "1.x"
+  },
   "scripts": {
     "start:srv": "node src/server.js",
     "start:app": "nw ."
+  },
+  "window": {
+    "icon": "assets/icon.png",
+    "show": true,
+    "show_in_taskbar": true
   },
   "node-main": "src/server.js",
   "main": "http://localhost:3000",
