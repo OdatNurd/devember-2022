@@ -1,0 +1,13 @@
+{
+  "name": "omphalos",
+  "version": "0.0.1",
+  "description": "A sample reimplementation of NodeCG, a web based stream control center",
+  "repository": "https://github.com/OdatNurd/devember-2022",
+  "author": {
+    "name": "OdatNurd",
+    "email": "odatnurd@gmail.com",
+    "url": "https://odatnurd.net"
+  },
+  "license": "MIT",
+  "private": false
+}
