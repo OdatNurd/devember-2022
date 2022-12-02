@@ -8,6 +8,20 @@
     "email": "odatnurd@gmail.com",
     "url": "https://odatnurd.net"
   },
+  "scripts": {
+    "start:srv": "node src/server.js",
+    "start:app": "nw ."
+  },
+  "node-main": "src/server.js",
+  "main": "http://localhost:3000",
+  "node-remote": "http://localhost:3000",
   "license": "MIT",
-  "private": false
+  "private": false,
+  "type": "module",
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.18.2",
+    "nw": "^0.70.1-sdk"
+  },
+  "devDependencies": {}
 }
