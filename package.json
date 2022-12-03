@@ -14,7 +14,8 @@
   },
   "scripts": {
     "start:srv": "node src/server.js",
-    "start:app": "nw ."
+    "start:app": "nw .",
+    "build:app:linux": "yarn nwbuild . --version 0.70.1 --flavour sdk --platform linux --arch x64 --outDir /tmp/omphalos/releases/linux"
   },
   "window": {
     "icon": "assets/icon.png",
@@ -30,7 +31,8 @@
   "dependencies": {
     "compression": "^1.7.4",
     "express": "^4.18.2",
-    "nw": "^0.70.1-sdk"
+    "nw": "^0.70.1-sdk",
+    "nw-builder": "^4.0.2"
   },
   "devDependencies": {}
 }

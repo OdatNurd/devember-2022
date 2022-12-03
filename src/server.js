@@ -3,9 +3,6 @@ import compression from 'compression';
 import http from 'http';
 
 // - Package this up as a zip that someone could run, on any platform
-//   - as an application that opens a window
-//       https://www.npmjs.com/package/nw-builder           (recommended for long term)
-//       https://www.npmjs.com/package/nwjs-builder-phoenix (easier to set up, no longer maintained)
 //   - as a "console" application that just runs in the background
 //       https://github.com/vercel/pkg
 // - application icon, though I guess we have to draw one
