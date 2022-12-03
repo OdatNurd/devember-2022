@@ -8,8 +8,9 @@ import http from 'http';
 //       https://www.npmjs.com/package/nwjs-builder-phoenix (easier to set up, no longer maintained)
 //   - as a "console" application that just runs in the background
 //       https://github.com/vercel/pkg
-// - tray icon to interface with this bad boy
-// - application icon, though I guess we haev to draw one
+// - application icon, though I guess we have to draw one
+// - save and restore the window position; how do app settings work? built it?
+// - start with no window, open it when the app starts
 //
 // We can set the "main" in the package.json to a js file, and then have it be
 // the thing that opens the window; that way we could configure the port. Could
