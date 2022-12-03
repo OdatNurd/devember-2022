@@ -18,12 +18,12 @@
   },
   "window": {
     "icon": "assets/icon.png",
-    "show": true,
+    "show": false,
     "show_in_taskbar": true
   },
   "node-main": "src/server.js",
-  "main": "http://localhost:3000",
-  "node-remote": "http://localhost:3000",
+  "main": "http://localhost",
+  "node-remote": "http://localhost:*",
   "license": "MIT",
   "private": false,
   "type": "module",
