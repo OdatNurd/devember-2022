@@ -23,7 +23,7 @@ async function launchServer() {
 
   // Set up some middleware that will serve static files out of the static
   // folder so that we don't have to inline the pages in code.
-  app.use(express.static('pages'));
+  app.use(express.static('www'));
 
   // Create a server to serve our content
   const server = http.createServer(app);

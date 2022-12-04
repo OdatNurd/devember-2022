@@ -13,14 +13,29 @@
     "yarn": "1.x"
   },
   "scripts": {
-    "start:srv": "node src/server.js"
+    "start:srv": "node src/server",
+    "build:dev": "rollup -c -w",
+    "build:prod": "rollup -c"
   },
   "license": "MIT",
   "private": false,
   "type": "module",
   "dependencies": {
     "compression": "^1.7.4",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "svelte": "^3.53.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@axel669/rollup-copy-static": "^0.1.2",
+    "@rollup/plugin-commonjs": "^23.0.3",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@tailwindcss/typography": "^0.5.7",
+    "autoprefixer": "^10.4.13",
+    "daisyui": "^2.42.1",
+    "postcss": "^8.4.19",
+    "rollup": "^3.5.1",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-svelte": "^7.1.0",
+    "tailwindcss": "^3.2.4"
+  }
 }

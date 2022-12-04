@@ -2,3 +2,4 @@ node_modules
 *.sublime-*
 yarn-error.log
 cache
+www
