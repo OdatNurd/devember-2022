@@ -3,6 +3,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import postcss from 'rollup-plugin-postcss';
 import copyStatic from '@axel669/rollup-copy-static';
+import $path from '@axel669/rollup-dollar-path';
 
 
 export default [
@@ -15,6 +16,13 @@ export default [
     },
     plugins: [
       svelte({}),
+      $path({
+        root: ".",
+        paths: {
+          $components: "src/client/components/index.js",
+        },
+        extensions: [".js", ".mjs", ".svelte", ".jsx"]
+      }),
       commonjs(),
       resolve({ browser: true }),
       postcss(),

@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@axel669/rollup-copy-static": "^0.1.2",
+    "@axel669/rollup-dollar-path": "^0.1.0",
     "@rollup/plugin-commonjs": "^23.0.3",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@tailwindcss/typography": "^0.5.7",
