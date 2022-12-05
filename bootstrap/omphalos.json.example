@@ -1,0 +1,21 @@
+// Example configuration file; rename this file to omphalos.json, then set
+// the configuration as you wish.
+//
+// Values present in here are the default values for configuration options if
+// the configuration item is not present in this file.
+//
+// See the documentation for more details.
+{
+  // When the application launches, it starts an internal web server to serve
+  // the application UI and overlays; this specifies what port that server
+  // listens on. On many operating systems, ports <= 1024 cannot be used as they
+  // are reserved.
+  "port": 3000,
+
+  // When logging, this sets the level of detail that is presents in the log file
+  // and what format for timestamps is used.
+  "logging": {
+    "level": "info",
+    "timestamp": "YYYY-MM-DD HH:mm:ss.SSS",
+  }
+}

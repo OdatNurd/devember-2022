@@ -3,14 +3,22 @@ import 'dotenv/config';
 import convict from 'convict';
 import json5 from 'json5';
 
-import { existsSync, mkdirSync, accessSync, constants } from 'fs';
+import { existsSync, mkdirSync, accessSync, copyFileSync, constants } from 'fs';
 import { homedir } from 'os';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
+/* These special constants are used as the name of the configuration folder and
+ * the name of the configuration file within that folder, respectively. They're
+ * used to set up the configuration variables. */
+const APP_NAME = 'omphalos';
+const CONFIG_FILE = 'omphalos.json';
+const CONFIG_FILE_TEMPLATE = 'omphalos.json.example';
+
 /* __dirname is not available in this module type, but we can create our own
  * value with the same name based on the URL of the current file. */
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
 
 // Tell convict about json5 so that our configuration file can have comments in
 // it without the parser taking a dump on our heads.
@@ -66,13 +74,39 @@ export const config = convict({
 // =============================================================================
 
 
+/* Bootstraps out the configuration folder in the user's configuration location
+ * (the location of which is platform specific), and ensures that all files that
+ * should be there when it is created are there. An example of this is the
+ * configuration file sample.
+ *
+ * When the folder already exists, this does nothing. */
+function boostrapConfigFolder(baseDir, configPath) {
+  // We don't need to do anything if the config folder already exists.
+  if (existsSync(configPath) === true) {
+    return;
+  }
+
+  console.log('user configuration folder is missing; bootstrapping');
+
+  // Create the top level config folder.
+  mkdirSync(configPath, { mode: 0o700 });
+
+  // Copy over the config template file.
+  copyFileSync(resolve(baseDir, 'bootstrap', CONFIG_FILE_TEMPLATE),
+               resolve(configPath, CONFIG_FILE_TEMPLATE));
+}
+
+
+// =============================================================================
+
+
 /* Based on the current operating system, look up the appropriate folder to
  * store application specific configuration and files in and return the name of
  * it. In addition, if the folder does not already exist, it will be created.
  *
  * This uses best practices (as far as a simple Google points out anyway) for
  * the location to use based on the operating system in use. */
-function getOSConfigDir() {
+function getOSConfigDir(baseDir) {
   let root;
 
   // Start by getting the root path, which is OS specific.
@@ -98,13 +132,8 @@ function getOSConfigDir() {
     default: throw new Error(`Unknown process platform ${process.platform}`);
   }
 
-  // Add in the application specific portion, and ensure that it exists.
-  const configPath = resolve(root, 'omphalos');
-  if (existsSync(configPath) === false) {
-    mkdirSync(configPath, { mode: 0o700 });
-  }
-
-  return configPath
+  // Add in the application specific portion, and ensure that the folder exists.
+  return resolve(root, APP_NAME);
 }
 
 
@@ -114,8 +143,12 @@ function getOSConfigDir() {
 /* Calculate what the base of the project folder is; this is required for some
  * aspects that need to grab files relative to the root. */
 const baseDir = resolve(__dirname, '../..');
-const configDir = getOSConfigDir();
-const configFile = resolve(configDir, 'omphalos.json');
+const configDir = getOSConfigDir(baseDir);
+const configFile = resolve(configDir, CONFIG_FILE);
+
+/* Ensure that the configuration folder exists; this will create and populate it
+ * with samples if it doesn't. */
+boostrapConfigFolder(baseDir, configDir);
 
 /* Store our base paths into the configuration object. */
 config.set('baseDir', baseDir);
