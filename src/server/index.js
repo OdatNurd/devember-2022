@@ -1,3 +1,5 @@
+import { config } from '#core/config';
+
 import express from 'express';
 import compression from 'compression';
 import http from 'http';
@@ -29,7 +31,7 @@ async function launchServer() {
   const server = http.createServer(app);
 
   // Get the server to listen for incoming requests.
-  const webPort = 3000;
+  const webPort = config.get('port');
   await server.listen(webPort, () => {
     console.info(`listening for requests at http://localhost:${webPort}`);
   });
