@@ -3,6 +3,8 @@ import 'dotenv/config';
 import convict from 'convict';
 import json5 from 'json5';
 
+import { existsSync, mkdirSync, accessSync, constants } from 'fs';
+import { homedir } from 'os';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -27,6 +29,12 @@ export const config = convict({
   // throughout the system by anything that has access to the config.
   baseDir: {
     doc: 'The directory that represents the root of the project; set at runtime',
+    format: '*',
+    default: ''
+  },
+
+  configDir: {
+    doc: 'The OS specific configuration folder; set at runtime',
     format: '*',
     default: ''
   },
@@ -58,14 +66,66 @@ export const config = convict({
 // =============================================================================
 
 
+/* Based on the current operating system, look up the appropriate folder to
+ * store application specific configuration and files in and return the name of
+ * it. In addition, if the folder does not already exist, it will be created.
+ *
+ * This uses best practices (as far as a simple Google points out anyway) for
+ * the location to use based on the operating system in use. */
+function getOSConfigDir() {
+  let root;
+
+  // Start by getting the root path, which is OS specific.
+  switch (process.platform) {
+    // Linux should be in .config in the home folder, unless XDG says that the
+    // user thinks it should be stored elsewhere instead.
+    case "linux":
+      root = `${process.env.XDG_CONFIG_HOME || `${homedir()}/.config`}`;
+      break;
+
+    // On Windows, the configuration is always in AppData, which presumably is
+    // something that always exists because the OS puts it there.
+    case "windows":
+      root = `${process.env.APPDATA}`;
+      break;
+
+    // On MacOS, the location is hard coded and always the same right up until
+    // Apple decides to change it without warning because why not, right?
+    case "darin":
+      root = `${homedir()}/Library/Application Support`
+      break;
+
+    default: throw new Error(`Unknown process platform ${process.platform}`);
+  }
+
+  // Add in the application specific portion, and ensure that it exists.
+  const configPath = resolve(root, 'omphalos');
+  if (existsSync(configPath) === false) {
+    mkdirSync(configPath, { mode: 0o700 });
+  }
+
+  return configPath
+}
+
+
+// =============================================================================
+
+
 /* Calculate what the base of the project folder is; this is required for some
  * aspects that need to grab files relative to the root. */
 const baseDir = resolve(__dirname, '../..');
+const configDir = getOSConfigDir();
+const configFile = resolve(configDir, 'omphalos.json');
 
-/* Store the base directory into the configuration object, then load and
- * validate the configuration file. */
+/* Store our base paths into the configuration object. */
 config.set('baseDir', baseDir);
-// config.loadFile(resolve(baseDir, 'omphalos.json'));
-config.validate();
+config.set('configDir', configDir)
 
+/* If the configuration file exists, load it. */
+if (existsSync(configFile) === true) {
+  config.loadFile(configFile);
+}
+
+/* Validate that everything in the configuration file is valid. */
+config.validate();
 // console.log(`configuration is: \n${config.toString()}`);
