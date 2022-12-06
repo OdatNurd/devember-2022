@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import convict from 'convict';
 import json5 from 'json5';
+import jetpack from 'fs-jetpack';
 
 import { existsSync, mkdirSync, accessSync, copyFileSync, constants } from 'fs';
 import { homedir } from 'os';
@@ -86,14 +87,11 @@ function boostrapConfigFolder(baseDir, configPath) {
     return;
   }
 
-  console.log('user configuration folder is missing; bootstrapping');
-
-  // Create the top level config folder.
+  // Create the config folder with the permissions that we want, and then
+  // bootstrap the files over. We need to create the folder ourselves or Jetpack
+  // won't give it the appropriate permissions.
   mkdirSync(configPath, { mode: 0o700 });
-
-  // Copy over the config template file.
-  copyFileSync(resolve(baseDir, 'bootstrap', CONFIG_FILE_TEMPLATE),
-               resolve(configPath, CONFIG_FILE_TEMPLATE));
+  jetpack.copy(resolve(baseDir, 'bootstrap', APP_NAME), configPath, { overwrite: true })
 }
 
 
