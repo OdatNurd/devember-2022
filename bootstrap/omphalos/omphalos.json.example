@@ -13,9 +13,11 @@
   "port": 3000,
 
   // When logging, this sets the level of detail that is presents in the log file
-  // and what format for timestamps is used.
+  // and what format for timestamps is used in the logs.
   "logging": {
     "level": "info",
     "timestamp": "YYYY-MM-DD HH:mm:ss.SSS",
+    "console": true,
+    "file": "%DATE%_omphalos.log"
   }
 }

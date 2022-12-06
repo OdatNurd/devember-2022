@@ -1,8 +1,13 @@
 import { config } from '#core/config';
+import { logger } from '#core/logger';
 
+import { resolve } from 'path';
+
+import jetpack from 'fs-jetpack'
 import express from 'express';
 import compression from 'compression';
 import http from 'http';
+
 
 // - Package this up as a zip that someone could run, on any platform
 //   - as a "console" application that just runs in the background
@@ -10,13 +15,29 @@ import http from 'http';
 // - Package this up as an electron application
 //   - this has to work in combination with the above
 
+// =============================================================================
+
+
+/* Get our subsystem logger. */
+const log = logger('core');
+
 
 // =============================================================================
+
 
 
 /* Try to load an existing token from the database, and if we find one, use it
  * to set up the database. */
 async function launchServer() {
+  const manifest = jetpack.read(resolve(config.get('baseDir'), 'package.json'), 'json');
+
+  const startMsg = `${manifest.name} version ${manifest.version} launching`;
+  const sep = '-'.repeat(startMsg.length);
+
+  log.info(sep);
+  log.info(startMsg);
+  log.info(sep);
+
   // The express application that houses the routes that we use to carry out
   // authentication with Twitch as well as serve user requests.
   const app = express();
@@ -33,7 +54,7 @@ async function launchServer() {
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');
   await server.listen(webPort, () => {
-    console.info(`listening for requests at http://localhost:${webPort}`);
+    log.info(`listening for requests at http://localhost:${webPort}`);
   });
 }
 

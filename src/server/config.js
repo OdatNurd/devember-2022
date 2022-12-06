@@ -62,6 +62,18 @@ export const config = convict({
         default: 'info',
         env: 'LOG_LEVEL'
     },
+    console: {
+      doc: 'Controls wether logs go to the console or not',
+      format: Boolean,
+      default: true,
+      env: 'LOG_TO_CONSOLE'
+    },
+    file: {
+      doc: 'The name of the log file to generate on disk; empty for no log',
+      format: '*',
+      default: '',
+      env: 'LOG_FILENAME'
+    },
     timestamp: {
       doc: 'The format string for the timestamps that get written as part of the log',
       format: '*',
