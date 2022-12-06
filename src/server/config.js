@@ -33,21 +33,24 @@ convict.addParser([
 
 /* This sets the configuration schema to be used for the overlay. */
 export const config = convict({
-  // When we start up the configuration system, this value is populated with the
-  // current base directory of the project, so that it can be accessed
-  // throughout the system by anything that has access to the config.
+  // When the config system is started this value is populated with the
+  // current base directory of the project install location.
   baseDir: {
     doc: 'The directory that represents the root of the project; set at runtime',
     format: '*',
     default: ''
   },
 
+  // When the config system is started this value is populated with the location
+  // of the configuration folder, whose location is distinct based on the OS
+  // in use.
   configDir: {
     doc: 'The OS specific configuration folder; set at runtime',
     format: '*',
     default: ''
   },
 
+  // The port that the internal web server listens for connections on.
   port: {
     doc: 'The port that the server should listen on',
     format: 'port',
@@ -55,6 +58,9 @@ export const config = convict({
     default: 3000
   },
 
+  // Options taht control our logging output; these allow you to specify the
+  // levels of logs that are sent out, wether the logs get sent to the console,
+  // to a file, or both, and what the timestamps look like.
   logging: {
     level: {
         doc: 'Sets the logging level that rhe server uses',
@@ -81,6 +87,24 @@ export const config = convict({
       env: 'LOG_TIMESTAMP'
     }
   },
+
+  // When loading bundles, these values allow for the specification of other
+  // bundles to load other than the ones in the configuration area's bundle
+  // folder, and a list of bundles to not load even if found.
+  bundles: {
+    additional: {
+      doc: 'A list of paths to bundles to load that are outside of the bundle directory',
+      format: Array,
+      default: [],
+      env: 'ADDITIONAL_BUNDLES'
+    },
+    ignore: {
+      doc: 'A list of bundles which should not be considered for loading even if found',
+      format: Array,
+      default: [],
+      env: 'IGNORE_BUNDLES'
+    }
+  }
 });
 
 
@@ -171,4 +195,4 @@ if (existsSync(configFile) === true) {
 
 /* Validate that everything in the configuration file is valid. */
 config.validate();
-// console.log(`configuration is: \n${config.toString()}`);
+console.log(`configuration is: \n${config.toString()}`);

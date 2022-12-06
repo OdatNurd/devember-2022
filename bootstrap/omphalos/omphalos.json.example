@@ -12,6 +12,21 @@
   // are reserved.
   "port": 3000,
 
+  // When the application loads, the list of available bundles is scanned and
+  // all eligible bundles are loaded. These configuration options allow you to
+  // specify the path to bundles to load that are outside of the bundles folder,
+  // and a list of bundles to not load if seen.
+  "bundles": {
+    // This list should be a list of paths that point at bundles; the path must
+    // be either absolute OR a path that's relative to the install location of
+    // the application.
+    "additional": [],
+
+    // A list of bundle names (taken from the package.json file) which, if
+    // found, should not be loaded.
+    "ignore": []
+  },
+
   // When logging, this sets the level of detail that is presents in the log file
   // and what format for timestamps is used in the logs.
   "logging": {
