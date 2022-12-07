@@ -126,8 +126,8 @@ function boostrapConfigFolder(baseDir, configPath) {
   // Create the config folder with the permissions that we want, and then
   // bootstrap the files over. We need to create the folder ourselves or Jetpack
   // won't give it the appropriate permissions.
-  mkdirSync(configPath, { mode: 0o700 });
-  jetpack.copy(resolve(baseDir, 'bootstrap', APP_NAME), configPath, { overwrite: true })
+  jetpack.dir(configPath, { mode: 0o700 });
+  jetpack.copy(resolve(baseDir, 'bootstrap', APP_NAME), configPath, { overwrite: true });
 }
 
 
