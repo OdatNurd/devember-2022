@@ -1,6 +1,8 @@
 import { config } from '#core/config';
 import { logger } from '#core/logger';
 
+import { loadBundles } from '#core/bundle_loader';
+
 import { resolve } from 'path';
 
 import jetpack from 'fs-jetpack'
@@ -8,7 +10,6 @@ import express from 'express';
 import compression from 'compression';
 import http from 'http';
 
-import "#core/bundle_loader";
 
 // - Package this up as a zip that someone could run, on any platform
 //   - as a "console" application that just runs in the background
@@ -38,6 +39,8 @@ async function launchServer() {
   log.info(sep);
   log.info(startMsg);
   log.info(sep);
+
+  await loadBundles();
 
   // The express application that houses the routes that we use to carry out
   // authentication with Twitch as well as serve user requests.
