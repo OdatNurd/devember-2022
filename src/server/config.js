@@ -50,6 +50,15 @@ export const config = convict({
     default: ''
   },
 
+  // When the config system is started this value is populated with the location
+  // from which to load bundles; this is usually a location inside of the
+  // configuration folder.
+  bundleDir: {
+    doc: 'the folder that contains installed bundles; set at runtime',
+    format: '*',
+    default: ''
+  },
+
   // The port that the internal web server listens for connections on.
   port: {
     doc: 'The port that the server should listen on',
@@ -187,6 +196,7 @@ boostrapConfigFolder(baseDir, configDir);
 /* Store our base paths into the configuration object. */
 config.set('baseDir', baseDir);
 config.set('configDir', configDir)
+config.set('bundleDir', resolve(configDir, 'bundles'));
 
 /* If the configuration file exists, load it. */
 if (existsSync(configFile) === true) {
