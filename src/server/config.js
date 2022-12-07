@@ -159,7 +159,7 @@ function getOSConfigDir(baseDir) {
 
     // On MacOS, the location is hard coded and always the same right up until
     // Apple decides to change it without warning because why not, right?
-    case "darin":
+    case "darwin":
       root = `${homedir()}/Library/Application Support`
       break;
 
