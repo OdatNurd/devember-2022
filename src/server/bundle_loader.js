@@ -256,15 +256,16 @@ export function loadBundleManifests(appManifest) {
       // is more than one bundle with the same name but in different locations.
       // In such a case, don't load this bundle, and also don't load the other
       // one.
-      //
-      // TODO: This test presumes that the same bundle only appears twice; if it
-      //       appears an odd number of times, then the odd version will be
-      //       loaded because the first two will have been cleared away.
       if (bundles[manifest.name] !== undefined) {
         log.error(`duplicate bundle '${manifest.name}'; cannot load`);
-        log.error(`${manifest.name} first seen at: ${bundles[manifest.name].omphalos.location}`);
-        log.error(`${manifest.name} also found at: ${thisBundle}`)
-        delete bundles[manifest.name]
+
+        // Mark this entry in the list as a duplicate.
+        if (bundles[manifest.name].omphalos.duplicate !== true) {
+          log.error(`'${manifest.name}' first seen at: ${bundles[manifest.name].omphalos.location}`);
+          bundles[manifest.name].omphalos.duplicate = true;
+        }
+
+        log.error(`'${manifest.name}' also found at: ${thisBundle}`)
       } else {
         // This is a valid manifest; store it's manifest location inside of the
         // omphalos key so that the server code knows where to find any assets
@@ -277,6 +278,15 @@ export function loadBundleManifests(appManifest) {
       log.error(`error loading bundle manifest: ${err}`)
     }
   }
+
+  // Trim away all of the bundles that were flagged as being duplicates; those
+  // bundles should not be loaded because the version chosen would be ambiguous.
+  bundles = Object.fromEntries(
+    Object.entries(bundles).filter(
+      item => item[1].omphalos.duplicate === undefined
+    )
+  );
+
 
   // Given our object that contains all of the currently known bundles, adjust
   // it to kick out any whose depencies are not in the list or whose
