@@ -3,6 +3,7 @@ import { logger } from '#core/logger';
 
 import joker from '@axel669/joker';
 import jetpack from 'fs-jetpack';
+import semver from 'semver';
 
 import { resolve, isAbsolute } from 'path';
 
@@ -14,6 +15,21 @@ import { resolve, isAbsolute } from 'path';
 const log = logger('bundles');
 
 
+/* Include an extra validation type that knows how to validate a packge semver
+ * and semver ranges. Includes also appropriate error messages for the
+ * validations. */
+joker.extendTypes({
+  "semver.$":   (item) => semver.valid(item) === null,
+  "semrange.$": (item) => semver.validRange(item) === null,
+})
+
+joker.extendErrors({
+    "semver.$":   (item) => `${item} is not a valid semantic version number`,
+    "semrange.$": (item) => `${item} is not a valid semantic version range`
+})
+
+
+
 // =============================================================================
 
 
@@ -23,9 +39,9 @@ const validPackageManifest = joker.validator({
   itemName: 'root',
   root: {
     "name": "string",
-    "version": "string"
+    "version": "semver"
   }
-})
+});
 
 
 /* For any folder that might contain a bundle it must have a package.json with
@@ -36,15 +52,13 @@ const validBundleManifest = joker.validator({
   root: {
     // What versions of omphalos are compatible with this bundle? If the version
     // of omphalos is not compatible, this bundle won't load.
-    "compatibleRange": "string",
+    "compatibleRange": "semrange",
 
     // Bundles that must exist and be loaded in order for this bundle to load.
     // If present, a bundle with the given name and compatible version will be
     // loaded prior to this bundle loading; if any dependencies fail to load,
     // this bundle will also not load.
-    "?deps{}": {
-      "name": "string"
-    },
+    "?deps{}": "semrange",
 
     // manifest relative path to an optional server side extension js file; if
     // this is set, the file must export the appropriate function which will be
