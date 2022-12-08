@@ -113,25 +113,34 @@ const validBundleManifest = joker.validator({
 
 
 /* This does the work of scanning for all possible bundle folders, both in the
- * regular bundle folder as well as in all configured extra bundle folders. The
- * return value is a list of paths which probably contain a bundle; this means
- * that they have a manifest but that it has not been checked yet. */
+ * regular bundle folder as well as in all configured extra bundle folders.
+ *
+ * The return value is a list of absolute paths which probably contain a bundle;
+ * this means that they have a manifest but that it has not been checked for
+ * validity yet. */
 function getBundlePaths() {
   const baseDir = config.get('baseDir');
   const bundles = config.get('bundleDir');
 
   log.info('scanning the bundle folder for installed bundles');
 
-  // Find all directories in the bundle directory that appear to have a manifest
-  // in them.
+  // Scan for all directories in the overall bundle directory and find all that
+  // have a packqge.json in them; we don't need to validate it, just find it to
+  // mark it as a candidate.
+  //
+  // All candidates are stored into an array as their absolute bundle path.
   const pathList = jetpack.list(bundles).filter(dir => {
     return jetpack.inspect(resolve(bundles, dir)).type === 'dir' &&
            jetpack.exists(resolve(bundles, dir, 'package.json')) === 'file'
   }).map(dir => resolve(bundles, dir));
 
-  // Iterate over all of the extra bundle paths that have been configured, and
-  // collect the ones that are actually bundles. The paths can be either
-  // relative to the install directory, or absolute.
+  // In addition to the above, the configuration can specify extra folders that
+  // contain bundles. Scan now over those taking the same steps as above to
+  // find all extra directories that appear to be bundles and return their
+  // absolute paths.
+  //
+  // Here the path might be absolute; if it's not then it's relative to the
+  // base install location of the application.
   pathList.push(...config.get('bundles.additional')
     .map(dir => isAbsolute(dir) ? dir : resolve(baseDir, dir))
     .filter(dir => jetpack.exists(resolve(bundles, dir, 'package.json')) === 'file')
@@ -146,23 +155,67 @@ function getBundlePaths() {
 // =============================================================================
 
 
-/* This will scan the global bundle folder as well as all of the folders that
- * have been configuered for extra bundles to find all potential bundles.
+/* Given an object that contains a list of bundles, remove from it all of the
+ * bundles which have dependencies that are not satisified, either because the
+ * bundle was not found, or because its version is not valid. */
+function stripInvalidDependencies(bundles) {
+  // Iterate over the bundles and clear away any that are not satisfied by
+  // recursively calling ourselves until the loop completes.
+  //
+  // This can't use Array.forEach() because we need the iteration to stop when
+  // a dependency is stripped away.
+  for (const bundle of Object.values(bundles)) {
+    if (bundle.omphalos.deps === undefined) {
+      continue;
+    }
+
+    // Iterate over all of the dependencies to verify that they exist and that
+    // their versions are satisified. Anything that is not valid or satisfied
+    // gets kicked out of the list.
+    for (const [pkgName, requiredVersion] of Object.entries(bundle.omphalos.deps)) {
+      // If the dependant bundle doesn't exist, we can't load this one.
+      const dependant = bundles[pkgName];
+
+      if (dependant === undefined || semver.satisfies(dependant.version, requiredVersion) === false) {
+        log.error((dependant === undefined)
+          ? `${bundle.name} depends on ${pkgName}, which was not found or not loaded`
+          : `${bundle.name} requires ${pkgName}:${requiredVersion}; not satified by ${dependant.version}`)
+        delete bundles[bundle.name];
+        return stripInvalidDependencies(bundles);
+      }
+    }
+  };
+}
+
+
+// =============================================================================
+
+/* Using the configuration of the application, find all of the folders that
+ * contain bundles, determine which are actually valid, and return back all of
+ * the manifests that are valid.
  *
- * From the list of potentials, any that we're supposed to ignore are kicked out
- * and the remainder are validated and loaded in dependency order.
- *
- * Execution does not contiunue until all bundles have been loaded. */
-export async function loadBundles() {
+ * This performs validations on the manifests to ensure that we only keep the
+ * ones that are actually bundles; those which are well formed, have the
+ * required application specific keys, and match version requirements. */
+export function loadBundleManifests(appManifest) {
   // Get the list of bundle names that we should skip over loading; this holds
-  // the names of bundles as defined from the name property in their manifest.
+  // the names of bundles as defined from the name property in their manifest,
+  // NOT their folder names.
   const ignoredBundles = config.get('bundles.ignore');
   const bundleDir = config.get('bundleDir');
 
-  // Check all potential bundles to see if they actually represent a bundle of
-  // some sort.
+  // The list of loaded and validated bundle manifests; items in here are
+  // valid in that their structure is good and their version requirements for
+  // the app are satisfied.
+  //
+  // Bundles are stored with their name as a key and their manifest as the
+  // value.
+  let bundles = {};
+
+  // Find all possible bundles, then load and validate their manifest files.
   for (const thisBundle of getBundlePaths()) {
     try {
+      // Determine the manifest file name based on the bundle path.
       const name = resolve(thisBundle, 'package.json');
       log.info(`loading bundle manifest from ${name.startsWith(bundleDir) ? name.substring(bundleDir.length + 1) : name}`);
 
@@ -173,35 +226,70 @@ export async function loadBundles() {
         throw new Error(`bundle folder does not contain a package.json`)
       }
 
-      // console.log(manifest);
-
-      // A bare minimum of fields must be present for this to be an overall
-      // valid package manifest.
+      // Validate that the "normal" node package keys are present and valid.
       const validPkg = validPackageManifest(manifest);
       if (validPkg !== true) {
         throw new Error(validPkg.map(e => e.message).join(', '))
       }
 
-      // If the name of this package is in the list of bundles to ignore, we
-      // can just skip to the next item.
+      // If this is a bundle we can ignore, do so now. This happens after the
+      // prior validation because it requires that there be a name.
       if (ignoredBundles.includes(manifest.name)) {
         log.info(`skipping ${manifest.name}; this bundle is ignored`)
         continue;
       }
 
       // In order to be a valid bundle, the manifest needs to have the required
-      // extra keys.
+      // extra application specific keys.
       const validBundle = validBundleManifest(manifest.omphalos);
       if (validBundle !== true){
         throw new Error(validBundle.map(e => e.message).join(', '))
       }
+
+      // If this bundle's required application version is not satisfied, this
+      // bundle can't be loaded.
+      if (semver.satisfies(appManifest.version, manifest.omphalos.compatibleRange) !== true) {
+        throw new Error(`bundle ${manifest.name} cannot run in this application version; requires ${manifest.omphalos.compatibleRange}`)
+      }
+
+      // This is a valid manifest; store it's manifest location inside of the
+      // omphalos key so that the server code knows where to find any assets
+      // from this bundle, then save it.
+      manifest.omphalos.location = thisBundle;
+      bundles[manifest.name] = manifest;
     }
     catch (err) {
       log.error(`error loading bundle manifest: ${err}`)
     }
   }
+
+  // Given our object that contains all of the currently known bundles, adjust
+  // it to kick out any whose depencies are not in the list or whose
+  // dependencies are in the list but are not satisfied by version requirements.
+  stripInvalidDependencies(bundles);
+
+  // Return back the object that lists all of the dependencies that still exist
+  // and can still be loaded.
+  return bundles;
 }
 
 // =============================================================================
 
+export async function loadBundles(appManifest) {
+  // Gather the list of bundles that we should be loading; this will discover
+  // all bundles,
+  const bundles = loadBundleManifests(appManifest);
+  console.dir(bundles, { depth: null});
+
+  // We now have a list of bundles that we know how to load; determine the
+  // dependency load order. If this turns up any bundles whose dependencies do
+  // not exist, those packages need to also be removed, which might cause a
+  // removal cascade.
+  //
+  // Part of this check has to verify that not only do bundles exist, but that
+  // they have correct verions.
+
+}
+
+// =============================================================================
 

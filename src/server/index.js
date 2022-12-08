@@ -40,7 +40,7 @@ async function launchServer() {
   log.info(startMsg);
   log.info(sep);
 
-  await loadBundles();
+  await loadBundles(manifest);
 
   // The express application that houses the routes that we use to carry out
   // authentication with Twitch as well as serve user requests.
