@@ -252,11 +252,26 @@ export function loadBundleManifests(appManifest) {
         throw new Error(`bundle ${manifest.name} cannot run in this application version; requires ${manifest.omphalos.compatibleRange}`)
       }
 
-      // This is a valid manifest; store it's manifest location inside of the
-      // omphalos key so that the server code knows where to find any assets
-      // from this bundle, then save it.
-      manifest.omphalos.location = thisBundle;
-      bundles[manifest.name] = manifest;
+      // If this bundle already exists in the list of known bundles, then there
+      // is more than one bundle with the same name but in different locations.
+      // In such a case, don't load this bundle, and also don't load the other
+      // one.
+      //
+      // TODO: This test presumes that the same bundle only appears twice; if it
+      //       appears an odd number of times, then the odd version will be
+      //       loaded because the first two will have been cleared away.
+      if (bundles[manifest.name] !== undefined) {
+        log.error(`duplicate bundle '${manifest.name}'; cannot load`);
+        log.error(`${manifest.name} first seen at: ${bundles[manifest.name].omphalos.location}`);
+        log.error(`${manifest.name} also found at: ${thisBundle}`)
+        delete bundles[manifest.name]
+      } else {
+        // This is a valid manifest; store it's manifest location inside of the
+        // omphalos key so that the server code knows where to find any assets
+        // from this bundle, then save it.
+        manifest.omphalos.location = thisBundle;
+        bundles[manifest.name] = manifest;
+      }
     }
     catch (err) {
       log.error(`error loading bundle manifest: ${err}`)
