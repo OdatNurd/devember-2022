@@ -377,6 +377,38 @@ function getLoadOrder(node, out_load_order) {
 // =============================================================================
 
 
+/* Given a bundle manifest, attempt to load the content. This includes loading
+ * the extension module (if any) and invoking the entry point as well as
+ * returning a router that will serve the panels and overlays for the bundle
+ * as appropriate.
+ *
+ * If the bundle has no pages to serve, then no router will be returned.
+ *
+ * If there is any error in loading the bundle, such as a missing resource or
+ * an error occurs while launching the extension code, this will raise an
+ * exception. */
+async function loadBundle(manifest) {
+  let router = null;
+  log.info(`loading bundle ${manifest.name}`);
+
+  // If there are panels, then ensure that all of the files that they reference
+  // exist and are readable, then create a router and add routes to it for each
+  // of the files.
+
+  // If there are overlays, then do the same thing as above, but with different
+  // routes; may also need to create the router if there were no panels.
+
+  // If there is an extension file, then load it, pull out the export that is
+  // the entry point, and call it, awaiting its return.
+
+  // Return the router for the files in this bundle, if any.
+  return router;
+}
+
+
+// =============================================================================
+
+
 /* This function does all of the work of bundle loading. In particular it will
  * discover all of the bundles that exist in the configured locations, validate
  * that they have a proper package file, that they are compatible with the
@@ -397,7 +429,37 @@ export async function loadBundles(appManifest) {
   const loadOrder = [];
   getLoadOrder(bundles, loadOrder);
 
-  console.log(loadOrder);
+  // Loop over the load order and load each bundle in turn. We track which
+  // bundles successfully loaded so that we can verify if we should load a
+  // package if any of its dependencies did not load.
+  const loadedBundles = [];
+  for (const name of loadOrder) {
+    try {
+      // Check the list of dependencies against the list of loaded bundles; if
+      // any are missing, we can't load this bundle.
+      const deps = Object.keys(bundles[name].omphalos.deps);
+      deps.forEach(depName => {
+        if (loadedBundles.includes(depName) === false) {
+          throw new BundleLoadError(`cannot load ${name}; dependency ${depName} did not load`)
+        }
+      });
+
+      // Looks good, load the bundle and capture the router, if any.
+      const bundle_router = await loadBundle(bundles[name]);
+
+      // Do something useful with the router, like add it to an overall router
+      // or something.
+
+      // This loaded
+      loadedBundles.push(name);
+    }
+    catch (errorObj) {
+      log.error(`error while loading ${name}: ${errorObj}`);
+      if (errorObj instanceof BundleLoadError === false) {
+        log.error(errorObj.stack);
+      }
+    }
+  }
 }
 
 // =============================================================================
