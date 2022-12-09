@@ -329,14 +329,55 @@ export function loadBundleManifests(appManifest) {
 // =============================================================================
 
 
+/* This function takes as input an object whose keys are bundle names and whose
+ * values are manifest objects for those bundles, and updates the provided
+ * output load order such that it contains the order the bundles in the list
+ * should be loaded to ensure that all dependencies are satisfied prior to a
+ * load.
+ *
+ * The function calls itself recursively in a depth first search in order to
+ * root the load in the leaf nodes that have no dependencies before considering
+ * the bundles that rely on those dependencies. */
+function getLoadOrder(node, out_load_order) {
+  for (const manifest of Object.values(node)) {
+    // Recursively call ourselves on our dependency list, which may be empty.
+    getLoadOrder(manifest.omphalos.deps, out_load_order);
+
+    // If we haven't already been visited, add ourselves to the output load
+    // order and mark ourselves. We might appear several times in the traversal
+    // but we only need to record ourselves once.
+    if (manifest.visited !== true) {
+      manifest.visited = true;
+      out_load_order.push(manifest.name)
+    }
+  }
+}
+
+
+// =============================================================================
+
+
+/* This function does all of the work of bundle loading. In particular it will
+ * discover all of the bundles that exist in the configured locations, validate
+ * that they have a proper package file, that they are compatible with the
+ * current version of the application, and ensure that their dependent
+ * packages exist as well.
+ *
+ * Once that is done, each bundle is loaded in appropriate order to ensure that
+ * dependencies are satisfied. If a bundle fails to load, its dependents will
+ * also not be loaded. */
 export async function loadBundles(appManifest) {
   // Discover all bundles that we can load and return a DAG that represents the
   // dependency structure between the bundles.
   const bundles = loadBundleManifests(appManifest);
-  console.dir(bundles, { depth: null });
+  // console.dir(bundles, { depth: null });
 
   // Now that we have a list of bundles that we know all have satisfied, non
   // cyclic dependencies, determine the load order.
+  const loadOrder = [];
+  getLoadOrder(bundles, loadOrder);
+
+  console.log(loadOrder);
 }
 
 // =============================================================================
