@@ -155,33 +155,57 @@ function getBundlePaths() {
 // =============================================================================
 
 
-/* Given an object that contains a list of bundles, remove from it all of the
- * bundles which have dependencies that are not satisified, either because the
- * bundle was not found, or because its version is not valid. */
-function stripInvalidDependencies(bundles) {
+/* Given an object whose keys are the names of valid bundles and whose values
+ * are the manifests for those bundles, satisfy all depenencides as well as we
+ * possibly can.
+ *
+ * For each package, the list of dependencies is verified to ensure that all of
+ * the dependencies that it requires are present and at a sufficient version.
+ *
+ * If any dependency is missing, the entire bundle is redacted away, and this
+ * will cascade so that any bundles that depend on this bundle will also be
+ * similarly removed.
+ *
+ * On return, the incoming list of bundles will have been modified (in place)
+ * to contain only those bundles whose dependencies are satisified.
+ *
+ * All remaining bundles are normalized so that they have a deps key (even if
+ * it is empty) and all dependency records have their version specifier replaced
+ * with a reference to the actual bundle object.
+ *
+ * The result is a directed graph, which we **DO NOT** guarantee is Acyclic;
+ * that test/adjustment needs to be done separately by the caller. */
+function satisfyDependencies(bundles) {
   // Iterate over the bundles and clear away any that are not satisfied by
   // recursively calling ourselves until the loop completes.
   //
   // This can't use Array.forEach() because we need the iteration to stop when
   // a dependency is stripped away.
   for (const bundle of Object.values(bundles)) {
+    // Normalize to have a deps key on the inner omphalos object
     if (bundle.omphalos.deps === undefined) {
-      continue;
+      bundle.omphalos.deps = {};
     }
 
     // Iterate over all of the dependencies to verify that they exist and that
     // their versions are satisified. Anything that is not valid or satisfied
-    // gets kicked out of the list.
+    // gets kicked out of the list, and if it is satisfied, the record is
+    // updated so that it references the actual bundle object by name and not
+    // just a version.
     for (const [pkgName, requiredVersion] of Object.entries(bundle.omphalos.deps)) {
-      // If the dependant bundle doesn't exist, we can't load this one.
       const dependant = bundles[pkgName];
 
+      // Delete and cycle if this dependency is missing or does not have a
+      // version that satisifies.
       if (dependant === undefined || semver.satisfies(dependant.version, requiredVersion) === false) {
         log.error((dependant === undefined)
           ? `${bundle.name} depends on ${pkgName}, which was not found or not loaded`
           : `${bundle.name} requires ${pkgName}:${requiredVersion}; not satified by ${dependant.version}`)
         delete bundles[bundle.name];
-        return stripInvalidDependencies(bundles);
+        return satisfyDependencies(bundles);
+      } else {
+        // Update the reference on this dependency to point to the manifest
+        bundle.omphalos.deps[pkgName] = bundles[pkgName]
       }
     }
   };
@@ -189,6 +213,7 @@ function stripInvalidDependencies(bundles) {
 
 
 // =============================================================================
+
 
 /* Using the configuration of the application, find all of the folders that
  * contain bundles, determine which are actually valid, and return back all of
@@ -287,33 +312,31 @@ export function loadBundleManifests(appManifest) {
     )
   );
 
+  // Satisfy all the dependencies in the list of bundles; this may remove items
+  // from the list if their dependencies cannot be satisfied. This also converts
+  // the structure into a directed graph, though it is not guaranteed to be
+  // acyclic.
+  satisfyDependencies(bundles);
 
-  // Given our object that contains all of the currently known bundles, adjust
-  // it to kick out any whose depencies are not in the list or whose
-  // dependencies are in the list but are not satisfied by version requirements.
-  stripInvalidDependencies(bundles);
+  // TODO: Implement Tarjan here to ensure that there are no cyclic dependencies
+  //       in our dependency tree; anything that is cyclic needs to be kicked
+  //       out similar to what the manifest loader does.
 
-  // Return back the object that lists all of the dependencies that still exist
-  // and can still be loaded.
   return bundles;
 }
 
+
 // =============================================================================
 
+
 export async function loadBundles(appManifest) {
-  // Gather the list of bundles that we should be loading; this will discover
-  // all bundles,
+  // Discover all bundles that we can load and return a DAG that represents the
+  // dependency structure between the bundles.
   const bundles = loadBundleManifests(appManifest);
-  console.dir(bundles, { depth: null});
+  console.dir(bundles, { depth: null });
 
-  // We now have a list of bundles that we know how to load; determine the
-  // dependency load order. If this turns up any bundles whose dependencies do
-  // not exist, those packages need to also be removed, which might cause a
-  // removal cascade.
-  //
-  // Part of this check has to verify that not only do bundles exist, but that
-  // they have correct verions.
-
+  // Now that we have a list of bundles that we know all have satisfied, non
+  // cyclic dependencies, determine the load order.
 }
 
 // =============================================================================
