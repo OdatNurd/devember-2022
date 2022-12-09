@@ -264,6 +264,11 @@ export function loadBundleManifests(appManifest) {
         throw new Error(validPkg.map(e => e.message).join(', '))
       }
 
+      // Now that we know that the manifest is nominally correct, announce what
+      // bundle this manifest included, since logs up until now have only
+      // included the path, which may not match.
+      log.info(`found bundle '${manifest.name}`)
+
       // If this is a bundle we can ignore, do so now. This happens after the
       // prior validation because it requires that there be a name.
       if (ignoredBundles.includes(manifest.name)) {
