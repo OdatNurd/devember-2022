@@ -143,7 +143,14 @@ function getBundlePaths() {
   // base install location of the application.
   pathList.push(...config.get('bundles.additional')
     .map(dir => isAbsolute(dir) ? dir : resolve(baseDir, dir))
-    .filter(dir => jetpack.exists(resolve(bundles, dir, 'package.json')) === 'file')
+    .filter(dir => {
+      if (jetpack.exists(resolve(bundles, dir, 'package.json')) === 'file') {
+        return true;
+      }
+
+      log.warn(`configured additional bundle was not found: ${dir}`);
+      return false;
+    })
   );
 
   log.info(`found ${pathList.length} potential bundle(s)`)
