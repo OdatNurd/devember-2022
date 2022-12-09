@@ -207,20 +207,24 @@ function satisfyDependencies(bundles) {
     // gets kicked out of the list, and if it is satisfied, the record is
     // updated so that it references the actual bundle object by name and not
     // just a version.
-    for (const [pkgName, requiredVersion] of Object.entries(bundle.omphalos.deps)) {
-      const dependant = bundles[pkgName];
+    for (const [depName, neededVersion] of Object.entries(bundle.omphalos.deps)) {
+      const dep = bundles[depName];
 
-      // Delete and cycle if this dependency is missing or does not have a
-      // version that satisifies.
-      if (dependant === undefined || semver.satisfies(dependant.version, requiredVersion) === false) {
-        log.error((dependant === undefined)
-          ? `${bundle.name} depends on ${pkgName}, which was not found or not loaded`
-          : `${bundle.name} requires ${pkgName}:${requiredVersion}; not satified by ${dependant.version}`)
+      // Delete and cycle if this dependency is missing, doesnot have a version
+      // that satisifies, or is depending on itself.
+      if (depName === bundle.name || dep === undefined || semver.satisfies(dep.version, neededVersion) === false) {
+        log.error(
+          (depName === bundle.name)
+            ? `${bundle.name} is listed as a dependency of itself`
+            : (dep === undefined)
+                ? `${bundle.name} depends on ${depName}, which was not found or not loaded`
+                : `${bundle.name} requires ${depName}:${neededVersion}; not satified by ${dep.version}`
+        );
         delete bundles[bundle.name];
         return satisfyDependencies(bundles);
       } else {
         // Update the reference on this dependency to point to the manifest
-        bundle.omphalos.deps[pkgName] = bundles[pkgName]
+        bundle.omphalos.deps[depName] = bundles[depName]
       }
     }
   };
