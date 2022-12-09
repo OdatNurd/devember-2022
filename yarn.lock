@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@axel669/joker@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@axel669/joker/-/joker-0.3.1.tgz#e0543e6799e2319614705be3597956ed8df48586"
-  integrity sha512-aPYhFzqcDV/g02o/CkeJN7ui6Sv1LOzNWhHhLsKalcWXXJnUNhs0+F/YJ1TsWHcryIkhLCKp++EWeIbA/DMRhg==
+"@axel669/joker@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@axel669/joker/-/joker-0.3.2.tgz#7e696776664ad78288e1e655d3b381980cef61f4"
+  integrity sha512-wo3Q1ZDv9UoB6nasvsrDTkK2GhPb/fM9xpnxW2m6oUVS2Fngq46T5nLw29dP4gcReFgkPIYCxYsG3h3w2FvPrQ==
 
 "@axel669/rollup-copy-static@^0.1.2":
   version "0.1.2"

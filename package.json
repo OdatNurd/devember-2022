@@ -24,7 +24,7 @@
     "#core/*": "./src/server/*.js"
   },
   "dependencies": {
-    "@axel669/joker": "^0.3.1",
+    "@axel669/joker": "^0.3.2",
     "compression": "^1.7.4",
     "convict": "^6.2.3",
     "dotenv": "^16.0.3",
