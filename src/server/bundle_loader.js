@@ -28,6 +28,14 @@ joker.extendErrors({
     "semrange.$": (item) => `${item} is not a valid semantic version range`
 })
 
+/* Exceptions of this class represent errors in loading bundles that are related
+ * to files being missing; this does not include any exceptions that might be
+ * thrown during the execution of extension code at startup. */
+export class BundleLoadError extends Error {
+  constructor(message = "", ...args) {
+    super(message, ...args);
+  }
+}
 
 
 // =============================================================================
