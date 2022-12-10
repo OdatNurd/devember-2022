@@ -39,13 +39,16 @@ async function launchServer() {
   log.info(startMsg);
   log.info(sep);
 
-  await loadBundles(manifest);
-
   // The express application that houses the routes that we use to carry out
   // authentication with Twitch as well as serve user requests.
   const app = express();
   app.use(express.json());
   app.use(compression());
+
+  // Discover and load all bundles; we get a list of routers that serve files
+  // for any that have any; apply them all.
+  const bundleRouters = await loadBundles(manifest);
+  bundleRouters.forEach(router => app.use(router));
 
   // Set up some middleware that will serve static files out of the static
   // folder so that we don't have to inline the pages in code.

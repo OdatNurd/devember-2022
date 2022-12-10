@@ -205,4 +205,4 @@ if (existsSync(configFile) === true) {
 
 /* Validate that everything in the configuration file is valid. */
 config.validate();
-console.log(`configuration is: \n${config.toString()}`);
+// console.log(`configuration is: \n${config.toString()}`);
