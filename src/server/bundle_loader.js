@@ -170,6 +170,48 @@ function getBundlePaths() {
 // =============================================================================
 
 
+/* Given a dependency graph, scan it to see if there are any dependencies that
+ * cause a circular dependency loop, and if so return them.
+ *
+ * This will recursively call itself descending into the dependency graph until
+ * it scans all nodes and declares the graph clean, or finds a loop.
+ *
+ * The scan is stopped as soon as a loop is found, so in order to verify the
+ * whole tree, this must be called until it declares the tree clean.
+ *
+ * The return of the function is either a set that indicates the modules that
+ * are forming a circular loop, or null to indicate that there are no loops. */
+function detectDependencyLoop(node, stack=undefined) {
+  // Set up a set to track our search if we don't already have one.
+  stack = stack ?? new Set();
+
+  for (const manifest of Object.values(node)) {
+    // If this bundle is already in the visited stack, we have hit a loop.
+    if (stack.has(manifest.name)) {
+      return stack
+    }
+
+    // Add ourselves to the visited stack and then recurse into our children.
+    // if they report a loop, we can signal it back right now without further
+    // searching.
+    stack.add(manifest.name);
+    const result = detectDependencyLoop(manifest.omphalos.deps, stack);
+    if (result !== null) {
+      return result;
+    }
+
+    // Our children are clean, so unwind the stack before we leave.
+    stack.delete(manifest.name);
+  }
+
+  // No loop was found if we get here.
+  return null;
+}
+
+
+// =============================================================================
+
+
 /* Given an object whose keys are the names of valid bundles and whose values
  * are the manifests for those bundles, satisfy all depenencides as well as we
  * possibly can.
@@ -181,15 +223,18 @@ function getBundlePaths() {
  * will cascade so that any bundles that depend on this bundle will also be
  * similarly removed.
  *
+ * A check is also done to ensure that for each bundle and its dependencies
+ * that there is not a circular dependency loop. If there is, all of the
+ * contributing items are dropped.
+ *
  * On return, the incoming list of bundles will have been modified (in place)
- * to contain only those bundles whose dependencies are satisified.
+ * to contain only those bundles whose dependencies are properly satisified.
  *
  * All remaining bundles are normalized so that they have a deps key (even if
  * it is empty) and all dependency records have their version specifier replaced
  * with a reference to the actual bundle object.
  *
- * The result is a directed graph, which we **DO NOT** guarantee is Acyclic;
- * that test/adjustment needs to be done separately by the caller. */
+ * The result is a directed acyclic graph of bundles. */
 function satisfyDependencies(bundles) {
   // Iterate over the bundles and clear away any that are not satisfied by
   // recursively calling ourselves until the loop completes.
@@ -210,9 +255,15 @@ function satisfyDependencies(bundles) {
     for (const [depName, neededVersion] of Object.entries(bundle.omphalos.deps)) {
       const dep = bundles[depName];
 
-      // Delete and cycle if this dependency is missing, doesnot have a version
+      // Delete and cycle if this dependency is missing, does not have a version
       // that satisifies, or is depending on itself.
-      if (depName === bundle.name || dep === undefined || semver.satisfies(dep.version, neededVersion) === false) {
+      //
+      // The satisfy check only needs to happen if the needed version is a
+      // string; if it is an object, then the version has already been verified
+      // in a prior loop, so we don't need to check it again; it must be valid
+      // in that case.
+      if (depName === bundle.name || dep === undefined ||
+             (typeof neededVersion === "string" && semver.satisfies(dep.version, neededVersion) === false)) {
         log.error(
           (depName === bundle.name)
             ? `${bundle.name} is listed as a dependency of itself`
@@ -228,6 +279,39 @@ function satisfyDependencies(bundles) {
       }
     }
   };
+
+  // Now that we know all dependencies have been satisified, check for circular
+  // reference loops that will cause us load problems and, if we find any,
+  // report and remove those modules.
+  //
+  // Currently the detection returns only one loop at a time, so we need to keep
+  // checking until all loops are found and removed.
+  //
+  // By definition the loop removes not only circular portion but also anything
+  // that leads to it, so we don't need to check for satisified dependencies
+  // because anything that depends on the loop is also removed.
+  let depLoop = detectDependencyLoop(bundles);
+  while (depLoop !== null) {
+    log.error(`circular dependency loop found: ${Array.from(depLoop).join(', ')}`);
+
+    // Remove all of the loop portions from the graph. Depending on the order of
+    // the traversal, it is possible that the same inner loop portions are seen
+    // more than once, since each package contains a reference to the dependency
+    // information.
+    //
+    // Thus, we only need to actually report on things that we are actively
+    // deleting; we don't need to report again if they are already gone and we
+    // happen to see them.
+    for (const dep of depLoop) {
+      if (bundles[dep] !== undefined) {
+        log.error(`removing circularly dependant module: '${dep}'`)
+        delete bundles[dep];
+      }
+    }
+
+    // See if there is another loop.
+    depLoop = detectDependencyLoop(bundles);
+  }
 }
 
 
@@ -279,7 +363,7 @@ export function loadBundleManifests(appManifest) {
       // Now that we know that the manifest is nominally correct, announce what
       // bundle this manifest included, since logs up until now have only
       // included the path, which may not match.
-      log.info(`found bundle '${manifest.name}`)
+      log.info(`loaded bundle manifest for '${manifest.name}`)
 
       // If this is a bundle we can ignore, do so now. This happens after the
       // prior validation because it requires that there be a name.
@@ -337,14 +421,10 @@ export function loadBundleManifests(appManifest) {
   );
 
   // Satisfy all the dependencies in the list of bundles; this may remove items
-  // from the list if their dependencies cannot be satisfied. This also converts
-  // the structure into a directed graph, though it is not guaranteed to be
-  // acyclic.
+  // from the list if their dependencies cannot be satisfied or if there are any
+  // circular dependencies. This also converts the structure into a directed
+  // graph, though it is not guaranteed to be acyclic.
   satisfyDependencies(bundles);
-
-  // TODO: Implement Tarjan here to ensure that there are no cyclic dependencies
-  //       in our dependency tree; anything that is cyclic needs to be kicked
-  //       out similar to what the manifest loader does.
 
   return bundles;
 }
@@ -432,6 +512,8 @@ export async function loadBundles(appManifest) {
   // cyclic dependencies, determine the load order.
   const loadOrder = [];
   getLoadOrder(bundles, loadOrder);
+
+  console.log(loadOrder);
 
   // Loop over the load order and load each bundle in turn. We track which
   // bundles successfully loaded so that we can verify if we should load a
