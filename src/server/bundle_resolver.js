@@ -121,7 +121,7 @@ function getBundlePaths() {
   const baseDir = config.get('baseDir');
   const bundles = config.get('bundleDir');
 
-  log.info('scanning the bundle folder for installed bundles');
+  log.info('scanning all bundle folders for installed bundles');
 
   // Scan for all directories in the overall bundle directory and find all that
   // have a packqge.json in them; we don't need to validate it, just find it to
@@ -317,11 +317,13 @@ function satisfyDependencies(bundles) {
  * ones that are actually bundles; those which are well formed, have the
  * required application specific keys, and match version requirements. */
 export function discoverBundles(appManifest) {
+  const bundleDir = config.get('bundleDir');
+  const configDir = config.get('configDir');
+
   // Get the list of bundle names that we should skip over loading; this holds
   // the names of bundles as defined from the name property in their manifest,
   // NOT their folder names.
   const ignoredBundles = config.get('bundles.ignore');
-  const bundleDir = config.get('bundleDir');
 
   // The list of loaded and validated bundle manifests; items in here are
   // valid in that their structure is good and their version requirements for
@@ -334,15 +336,19 @@ export function discoverBundles(appManifest) {
   // Find all possible bundles, then load and validate their manifest files.
   for (const thisBundle of getBundlePaths()) {
     try {
-      // Determine the manifest file name based on the bundle path.
+      // Determine the manifest file name based on the bundle path. We want a
+      // version of this that trims away the longer portions of the bundle path
+      // so that the logs are more readable.
       const name = resolve(thisBundle, 'package.json');
-      log.info(`loading bundle manifest from ${name.startsWith(bundleDir) ? name.substring(bundleDir.length + 1) : name}`);
+      const shortPath = thisBundle.startsWith(configDir) ? thisBundle.substring(configDir.length + 1) : thisBundle;
+
+      // log.info(`loading bundle manifest from ${shortPath}`);
 
       // Start by loading the package.json for the bundle; this gets an object
       // or undefined if the file is missing. Errors are handled below.
       const manifest = jetpack.read(name, 'json');
       if (manifest === undefined) {
-        throw new Error(`bundle folder does not contain a package.json`)
+        throw new Error(`${shortPath} does not contain a package.json`)
       }
 
       // Validate that the "normal" node package keys are present and valid.
@@ -354,7 +360,7 @@ export function discoverBundles(appManifest) {
       // Now that we know that the manifest is nominally correct, announce what
       // bundle this manifest included, since logs up until now have only
       // included the path, which may not match.
-      log.info(`loaded bundle manifest for '${manifest.name}`)
+      log.info(`loaded bundle manifest for '${manifest.name}' from ${shortPath}`)
 
       // If this is a bundle we can ignore, do so now. This happens after the
       // prior validation because it requires that there be a name.
