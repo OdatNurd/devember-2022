@@ -64,6 +64,13 @@ const validBundleManifest = joker.validator({
     // called when the bundle is mounted.
     "?extension": "string",
 
+    // These items specify a path relative to the manifest file in the package
+    // that specify where any panels and graphics are expected to be found.
+    // If they are not provided, then a default of "panels" and "graphics"
+    // respectively will be used as the location.
+    "?panelPath": "string",
+    "?graphicPath": "string",
+
     // A list of user interface panels that should be presented for this bundle.
     // Sizes are in columns and rows. If a panel is locked, it will not be
     // automatically moved, though it can still be moved manually. All panels
@@ -71,6 +78,8 @@ const validBundleManifest = joker.validator({
     // If a panel is fullbleed, it consumes its entire workspace. In that case
     // it is the only item that will exist in that workspace; a new workspace
     // will be created as needed to enforce this.
+    //
+    // The name of the file in the panel is relative to the panelPath.
     "?panels[]": {
       "file": "string",
       "name": "string",
@@ -96,6 +105,8 @@ const validBundleManifest = joker.validator({
     // sizes are in pixels and are informational only. A graphic that is single
     // instance will only be served to a single client, after which all other
     // attempts to serve that graphic will fail unless the connection is broken.
+    //
+    // The name of the file in the graphic is relative to the panelPath.
     "?graphics[]": {
       "file": "string",
       "size": {
@@ -399,8 +410,16 @@ export function discoverBundles(appManifest) {
       } else {
         // This is a valid manifest; store it's manifest location inside of the
         // omphalos key so that the server code knows where to find any assets
-        // from this bundle, then save it.
+        // from this bundle
         manifest.omphalos.location = thisBundle;
+
+        // Fill out the panel and graphics paths to be absolute based on the
+        // bundle location. If these keys are not set, then assume a default
+        // value for them.
+        manifest.omphalos.panelPath = resolve(thisBundle, manifest.omphalos.panelPath || 'panels');
+        manifest.omphalos.graphicPath = resolve(thisBundle, manifest.omphalos.graphicPath || 'graphics');
+
+        // Save it now.
         bundles[manifest.name] = manifest;
       }
     }
