@@ -27,7 +27,6 @@ const log = logger('core');
 // =============================================================================
 
 
-
 /* Try to load an existing token from the database, and if we find one, use it
  * to set up the database. */
 async function launchServer() {
