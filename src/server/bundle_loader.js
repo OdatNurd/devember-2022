@@ -81,17 +81,16 @@ function serveStaticFile(req, res, staticFile) {
  * The return value is a potential router; this will be null if there was no
  * router given and none is needed, a new router if we were given null and we
  * needed a router, or the router passed in if it existed. */
-function setupAssetRoutes(manifest, assetKey, assetPath, router) {
-  const bundle = manifest.name;
+function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
   const fullAssetPath = resolve(manifest.omphalos.location, assetPath);
 
-  log.info(`setting up routes for '${bundle}' ${assetKey}`);
+  log.info(`setting up routes for '${bundleName}' ${assetKey}`);
 
   // If the manifest doesn't have any entries for the asset key that we are
   // trying to serve, then we don't need to do anything else.
   const assets = manifest.omphalos[assetKey];
   if (assets === undefined || assets.length === 0) {
-    log.warn(`bundle '${bundle}' has no ${assetKey}; skipping setup`);
+    log.warn(`bundle '${bundleName}' has no ${assetKey}; skipping setup`);
     return router;
   }
 
@@ -99,12 +98,12 @@ function setupAssetRoutes(manifest, assetKey, assetPath, router) {
   // folder in the package, which needs to exist and be a folder or we can't
   // serve anything.
   if (jetpack.exists(fullAssetPath) !== 'dir') {
-    log.error(`bundle '${bundle}' has a ${assetKey} path that does not exist: ${assetPath}`);
+    log.error(`bundle '${bundleName}' has a ${assetKey} path that does not exist: ${assetPath}`);
     return router;
   }
 
   // All of the URL's that we are going to add to the router are based on this
-  const baseUrl = `/bundles/${manifest.name}/${assetKey}`;
+  const baseUrl = `/bundles/${bundleName}/${assetKey}`;
 
   // If we were not given a router, then create one now.
   router ??= express.Router({ caseSensitive: true });
@@ -150,6 +149,48 @@ function setupAssetRoutes(manifest, assetKey, assetPath, router) {
 // =============================================================================
 
 
+/* Check the bundle manfest given to see if it contains any extension code or
+ * not. If it does, then the file will be loaded, its internal extension point
+ * will be gathered, and then executed.
+ *
+ * If any error occurs while loading the bundle, an exception will be thrown to
+ * signal that error condition; otherwise we return normally.
+ *
+ * It is not considered an error for there to be no extension. */
+async function loadBundleExtension(manifest, bundleName) {
+  const extensionFile = manifest.omphalos.extension;
+  const fullExtensionFile = resolve(manifest.omphalos.location, extensionFile);
+
+  log.info(`loading code extensions for '${bundleName}'`);
+
+  // If the manifest doesn't include an extension endpoint, then there is
+  // nothing for us to do, so we can leave.
+  if (extensionFile === null) {
+    log.warn(`bundle '${bundleName}' has no extensions; skipping setup`);
+    return;
+  }
+
+  log.debug(`${extensionFile} maps to ${fullExtensionFile}`);
+  if (jetpack.exists(fullExtensionFile) !== 'file') {
+    log.error(`file does not exist: ${fullExtensionFile}`)
+    throw new BundleLoadError(`unable to find extension file ${extensionFile}`)
+  }
+
+  // Import the module from the bundle location; the extension file needs to
+  // be made explicitly relative to bundle.
+  const extension = await import(fullExtensionFile);
+  if (extension.main === undefined) {
+    throw new BundleLoadError(`the extension endoint does not export the symbol 'main'`);
+  }
+
+  // Invoke the entrypoint to initialize the module
+  await extension.main();
+}
+
+
+// =============================================================================
+
+
 /* Given a bundle manifest, attempt to load the content. This includes loading
  * the extension module (if any) and invoking the entry point as well as
  * returning a router that will serve the panels and overlays for the bundle
@@ -162,8 +203,12 @@ function setupAssetRoutes(manifest, assetKey, assetPath, router) {
  * exception. */
 async function loadBundle(manifest) {
   let router = null;
-  log.info(`loading bundle ${manifest.name}`);
-  console.dir(manifest, { depth: null });
+
+  // Alias the name of the bundle for simplicity.
+  const bundleName = manifest.name;
+  log.info(`loading bundle ${bundleName}`);
+
+  // console.dir(manifest, { depth: null });
 
   // TODO: Do we want to allow graphics and panels to serve from the same place?
   //       If so, we need to take special care, like making only one router for
@@ -175,12 +220,16 @@ async function loadBundle(manifest) {
   //       single router for all bundles core files. Is this a speed or space
   //       enhancement of any kind?
 
-  // Set up the panel and graphic routes as needed.
-  router = setupAssetRoutes(manifest, 'panels', manifest.omphalos.panelPath, router);
-  router = setupAssetRoutes(manifest, 'graphics', manifest.omphalos.graphicPath, router);
+  // If this bundle has an extension, then load it now. If there is an extension
+  // but there is some issue with it, this will raise an exception, which will
+  // be caught by the loader.
+  await loadBundleExtension(manifest, bundleName);
 
-  // If there is an extension file, then load it, pull out the export that is
-  // the entry point, and call it, awaiting its return.
+  // Set up the panel and graphic routes as needed. These don't signal an error
+  // back because it's not as catastrophic if a panel or graphic is missing;
+  // this could be done on purpose as development of the bundle progresses.
+  router = setupAssetRoutes(manifest, bundleName, 'panels', manifest.omphalos.panelPath, router);
+  router = setupAssetRoutes(manifest, bundleName, 'graphics', manifest.omphalos.graphicPath, router);
 
   // Return the router for the files in this bundle, if any.
   return router;
