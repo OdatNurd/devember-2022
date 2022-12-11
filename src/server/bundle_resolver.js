@@ -140,7 +140,7 @@ function getBundlePaths() {
   //
   // All candidates are stored into an array as their absolute bundle path.
   const pathList = jetpack.list(bundles).filter(dir => {
-    return jetpack.inspect(resolve(bundles, dir)).type === 'dir' &&
+    return jetpack.exists(resolve(bundles, dir)) === 'dir' &&
            jetpack.exists(resolve(bundles, dir, 'package.json')) === 'file'
   }).map(dir => resolve(bundles, dir));
 
