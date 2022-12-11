@@ -157,7 +157,7 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
  * signal that error condition; otherwise we return normally.
  *
  * It is not considered an error for there to be no extension. */
-async function loadBundleExtension(manifest, bundleName) {
+async function loadBundleExtension(api, manifest, bundleName) {
   const extensionFile = manifest.omphalos.extension;
   const fullExtensionFile = resolve(manifest.omphalos.location, extensionFile);
 
@@ -183,8 +183,16 @@ async function loadBundleExtension(manifest, bundleName) {
     throw new BundleLoadError(`the extension endoint does not export the symbol 'main'`);
   }
 
+  // Set up a bundle specific version of the API; this is the global API but
+  // with some fields swapped out for bundle specific items.
+  const bundle_api = {
+    ...api,
+    log: logger(bundleName),
+    bundleInfo: manifest
+  }
+
   // Invoke the entrypoint to initialize the module
-  await extension.main();
+  await extension.main(bundle_api);
 }
 
 
@@ -201,7 +209,7 @@ async function loadBundleExtension(manifest, bundleName) {
  * If there is any error in loading the bundle, such as a missing resource or
  * an error occurs while launching the extension code, this will raise an
  * exception. */
-async function loadBundle(manifest) {
+async function loadBundle(api, manifest) {
   let router = null;
 
   // Alias the name of the bundle for simplicity.
@@ -223,7 +231,7 @@ async function loadBundle(manifest) {
   // If this bundle has an extension, then load it now. If there is an extension
   // but there is some issue with it, this will raise an exception, which will
   // be caught by the loader.
-  await loadBundleExtension(manifest, bundleName);
+  await loadBundleExtension(api, manifest, bundleName);
 
   // Set up the panel and graphic routes as needed. These don't signal an error
   // back because it's not as catastrophic if a panel or graphic is missing;
@@ -248,7 +256,7 @@ async function loadBundle(manifest) {
  * Once that is done, each bundle is loaded in appropriate order to ensure that
  * dependencies are satisfied. If a bundle fails to load, its dependents will
  * also not be loaded. */
-export async function loadBundles(appManifest) {
+export async function loadBundles(api, appManifest) {
   // Discover all bundles that we can load and return a DAG that represents the
   // dependency structure between the bundles.
   const bundles = discoverBundles(appManifest);
@@ -278,7 +286,7 @@ export async function loadBundles(appManifest) {
       });
 
       // Looks good, load the bundle and capture the router, if any.
-      const bundle_router = await loadBundle(bundles[name]);
+      const bundle_router = await loadBundle(api, bundles[name]);
       if (bundle_router !== null) {
         bundleRouters.push(bundle_router);
       }

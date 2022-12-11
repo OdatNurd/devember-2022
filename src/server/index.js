@@ -45,9 +45,20 @@ async function launchServer() {
   app.use(express.json());
   app.use(compression());
 
+  // A common API object that is passed to all extension code when it's loaded.
+  // This is augmented in the bundle loader to provide the the bundle specific
+  // portions of the API, such as a
+  const api = {
+    // These fields are not global; they're specific to each bundle that has an
+    // extension module in it. When such a bundle is loaded, the API that it
+    // gets passed will have these values swapped out for the correct ones.
+    log: undefined,
+    bundleInfo: undefined,
+  }
+
   // Discover and load all bundles; we get a list of routers that serve files
   // for any that have any; apply them all.
-  const bundleRouters = await loadBundles(manifest);
+  const bundleRouters = await loadBundles(api, manifest);
   bundleRouters.forEach(router => app.use(router));
 
   // Set up some middleware that will serve static files out of the static
