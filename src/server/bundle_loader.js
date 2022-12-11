@@ -5,6 +5,8 @@ import { discoverBundles, getBundleLoadOrder } from '#core/bundle_resolver';
 import { resolve, basename } from 'path';
 
 import express from 'express';
+import jetpack from 'fs-jetpack';
+
 
 // =============================================================================
 
@@ -59,6 +61,95 @@ function serveStaticFile(req, res, staticFile) {
 // =============================================================================
 
 
+/* This function sets up all of the routes needed to serve:
+ *   - all panel files
+ *   - all graphic files
+ *   - the loose assets from both panels and graphics
+ *
+ * In particular, we serve the panel and graphic files with specific routes so
+ * that we can modify the content of the file on the fly as we send it to the
+ * browser, and the remainder of the assets are served as static files.
+ *
+ * The function needs to be given the package.json manifest of the bundle, the
+ * key that represents what assets are being exposed ('panels' or 'graphics'),
+ * the path for those assets, and a potential router object to add the routes
+ * to.
+ *
+ * If the given router is null then this will create a new one to use, allowing
+ * the call point to only get new routers when needed.
+ *
+ * The return value is a potential router; this will be null if there was no
+ * router given and none is needed, a new router if we were given null and we
+ * needed a router, or the router passed in if it existed. */
+function setupAssetRoutes(manifest, assetKey, assetPath, router) {
+  const bundle = manifest.name;
+  const fullAssetPath = resolve(manifest.omphalos.location, assetPath);
+
+  log.info(`setting up routes for '${bundle}' ${assetKey}`);
+
+  // If the manifest doesn't have any entries for the asset key that we are
+  // trying to serve, then we don't need to do anything else.
+  const assets = manifest.omphalos[assetKey];
+  if (assets === undefined || assets.length === 0) {
+    log.warn(`bundle '${bundle}' has no ${assetKey}; skipping setup`);
+    return router;
+  }
+
+  // All of the assets of this type are going to be served out of a specific
+  // folder in the package, which needs to exist and be a folder or we can't
+  // serve anything.
+  if (jetpack.exists(fullAssetPath) !== 'dir') {
+    log.error(`bundle '${bundle}' has a ${assetKey} path that does not exist: ${assetPath}`);
+    return router;
+  }
+
+  // All of the URL's that we are going to add to the router are based on this
+  const baseUrl = `/bundles/${manifest.name}/${assetKey}`;
+
+  // If we were not given a router, then create one now.
+  router ??= express.Router({ caseSensitive: true });
+
+  // Add in a route for each of the specifically designated assets.
+  for (const asset of assets) {
+    // Get the full path to the static file that we want to serve and the URL
+    // that it will be known by internally
+    const staticFile = resolve(fullAssetPath, asset.file);
+    const staticUrl = `${baseUrl}/${asset.file}`
+
+    // Verify that the static file that we're going to serve actually exists;
+    // if not, skip adding a route for it.
+    log.debug(`${staticUrl} maps to ${assetPath}/${asset.file}`);
+    if (jetpack.exists(staticFile) !== 'file') {
+      log.error(`file does not exist: ${staticFile}`)
+      continue;
+    }
+
+    // If the static file is not rooted in the asset path, then a relative path
+    // is trying to escape; log an error and don't add a static route.
+    //
+    // Note: this file could still be served if its relative path ends it inside
+    // the panel or graphic folders, since those are served wholesale.
+    if (staticFile.startsWith(fullAssetPath) === false) {
+      log.error(`file is not contained within the appropriate asset path`);
+      continue;
+    }
+
+    // Add in a route for it to serve this specific static file.
+    router.get(staticUrl, (req, res) => serveStaticFile(req, res, staticFile));
+  }
+
+  // Now that we're done with the individual files, set up a route to serve the
+  // rest of the content of the panels in this bundle.
+  log.debug(`serving static content: ${baseUrl} -> ${assetPath}`);
+  router.use(baseUrl, express.static(fullAssetPath));
+
+  return router;
+}
+
+
+// =============================================================================
+
+
 /* Given a bundle manifest, attempt to load the content. This includes loading
  * the extension module (if any) and invoking the entry point as well as
  * returning a router that will serve the panels and overlays for the bundle
@@ -72,53 +163,21 @@ function serveStaticFile(req, res, staticFile) {
 async function loadBundle(manifest) {
   let router = null;
   log.info(`loading bundle ${manifest.name}`);
-  // console.dir(manifest, { depth: null });
+  console.dir(manifest, { depth: null });
 
-  // If there are any panels, we need to set up a router for that.
-  if (manifest.omphalos.panels !== undefined) {
-    const panelPath = manifest.omphalos.panelPath;
+  // TODO: Do we want to allow graphics and panels to serve from the same place?
+  //       If so, we need to take special care, like making only one router for
+  //       both paths, and so on.
+  //
+  // TODO: Should we use only a single router for all bundles instead of 1 per?
+  //       We could refactor so that this call gets a router argument insted of
+  //       having a local, and alter the call point, and then there would be a
+  //       single router for all bundles core files. Is this a speed or space
+  //       enhancement of any kind?
 
-    // Validate that the panelPath is actually a folder that exists and is a
-    // directory. Should we also verify that the panel file exists at its path
-    // too, or no?
-
-    // Create a router if we haven't already done so.
-    router ??= express.Router({ caseSensitive: true });
-
-    // NOTE: Currently the resolver code is making the panel path absolute at
-    // load time; we should do that here OR trim the base path off in order to
-    // have a relative path for our needs here so that things make more sense.
-    //
-    // ALSO, add /bundles/ to the path at the root so that no files from here
-    // can conflict with the main app routes.
-
-    // Add in indidivudal routes for each of the panel files so that they
-    // take precedence; this allows us to handle them specially.
-    // TODO: Does this work if the panel as a relative path? How relative is
-    //       relative? is .. allowed?
-    for (const panel of manifest.omphalos.panels) {
-      const staticFileName = resolve(panelPath, panel.file);
-      log.info(`serving panel file: /${manifest.name}/panels/${panel.file} -> ${staticFileName}`);
-      router.get(`/${manifest.name}/panels/${panel.file}`, (req, res) => serveStaticFile(req, res, staticFileName))
-    }
-
-    // Add in a static route now that catches all of the other panel files.
-    log.info(`serving static content: /${manifest.name}/panels/ -> ${panelPath}`)
-    router.use(`/${manifest.name}/panels/`, express.static(panelPath));
-  }
-
-  // Listen for specific files first, then serve the static directory second; if
-  // you do that then you can serve the content of specific files separately from
-  // the directory as a whole.
-  // app.get("/bundle1/file3.txt", (req, res) => res.send('I am a random string of poop'));
-  // app.use("/bundle1/", express.static('/tmp/bob/poop/static/'));
-
-  // If there are panels, then ensure that all of the files that they reference
-  // exist and are readable, then create a router and add routes to it for each
-  // of the files.
-
-  // If there are overlays, then do the same thing as above, but with different
-  // routes; may also need to create the router if there were no panels.
+  // Set up the panel and graphic routes as needed.
+  router = setupAssetRoutes(manifest, 'panels', manifest.omphalos.panelPath, router);
+  router = setupAssetRoutes(manifest, 'graphics', manifest.omphalos.graphicPath, router);
 
   // If there is an extension file, then load it, pull out the export that is
   // the entry point, and call it, awaiting its return.

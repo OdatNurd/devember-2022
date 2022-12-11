@@ -413,11 +413,11 @@ export function discoverBundles(appManifest) {
         // from this bundle
         manifest.omphalos.location = thisBundle;
 
-        // Fill out the panel and graphics paths to be absolute based on the
-        // bundle location. If these keys are not set, then assume a default
-        // value for them.
-        manifest.omphalos.panelPath = resolve(thisBundle, manifest.omphalos.panelPath || 'panels');
-        manifest.omphalos.graphicPath = resolve(thisBundle, manifest.omphalos.graphicPath || 'graphics');
+        // Ensure that the panel path and the graphic path are set, even if
+        // they are not in the manifest. There are specific default values if
+        // they are not present.
+        manifest.omphalos.panelPath ??= 'panels';
+        manifest.omphalos.graphicPath ??= 'graphics';
 
         // Save it now.
         bundles[manifest.name] = manifest;
