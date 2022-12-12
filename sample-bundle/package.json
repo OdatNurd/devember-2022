@@ -1,0 +1,40 @@
+{
+  "name": "sample-bundle",
+  "version": "1.0.0",
+  "type": "module",
+  "omphalos": {
+    "compatibleRange": "~0.0.1",
+    "extension": "server/extension_entry.mjs",
+    "panelPath": "ui",
+    "panels": [
+      {
+        "file": "panel_one.html",
+        "name": "panel-one",
+        "title": "The First Panel",
+        "size": {
+          "width": 4,
+          "height": 2
+        }
+      },
+      {
+        "file": "other/panel_two.html",
+        "name": "panel-two",
+        "title": "The First Panel",
+        "size": {
+          "width": 4,
+          "height": 2
+        }
+      }
+    ],
+    "graphicPath": "overlays",
+    "graphics": [
+      {
+        "file": "the_overlay.html",
+        "size": {
+          "width": 1920,
+          "height": 1080
+        }
+      }
+    ]
+  }
+}
