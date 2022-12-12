@@ -1,0 +1,6 @@
+position: 1
+label: 'Quick Start'
+collapsed: false
+link:
+  type: generated-index
+  description: A guide to Omphalos; what it is and what you can use it for.

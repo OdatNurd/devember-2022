@@ -1,6 +1,11 @@
 .env
 node_modules
+build
 *.sublime-*
 yarn-error.log
 cache
 www
+
+# Generated files
+.docusaurus
+.cache-loader
