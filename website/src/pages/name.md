@@ -13,7 +13,7 @@ An interesting question, to say the least, and a fair one.
 
 When I decided on what the [Devember 2022][2] project was going to be (a
 streamer control panel application) I floundered about for a name more exciting
-than just `devemver-2022`.
+than just `devember-2022`.
 
 So, being the clever individual that I am, I went to an online thesaurus and
 looked for words that mean the same thing as "control panel" looking for
