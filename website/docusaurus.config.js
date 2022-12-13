@@ -39,17 +39,36 @@ const config = {
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+
     ({
+      announcementBar: {
+        id: 'in_devember_dev',
+        content: 'During Devember 2022, development of Omphalos is happening daily LIVE on my <a target="_blank" rel="noopener noreferrer" href="https://twitch.tv/odatnurd">Twitch Channel</a>!',
+        backgroundColor: '#9147FF',
+        textColor: '#fff',
+        isCloseable: true,
+      },
+
+      colorMode: {
+        defaultMode: 'dark',
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
+      },
+
       navbar: {
         title: 'Omphalos',
         logo: {
-          alt: 'The awesome Omphalos logo',
+          alt: 'The Omphalos Logo, a grey rock',
           src: 'img/omphalos.svg',
         },
         items: [
           {
+            label: 'What?',
+            to: '/name'
+          },
+          {
             type: 'doc',
-            docId: 'quickstart/intro',
+            docId: 'intro',
             position: 'left',
             label: 'Docs',
           },
@@ -60,21 +79,38 @@ const config = {
           },
         ],
       },
+
       footer: {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: 'Learn',
             items: [
               {
+                label: "What does 'Omphalos' mean?",
+                to: '/name'
+              },
+              {
                 label: 'What is Omphalos?',
-                to: '/docs/quickstart/intro',
+                to: '/docs/intro',
+              },
+              {
+                label: "Get Started!",
+                to: '/docs/quickstart/installation'
               },
             ],
           },
           {
-            title: 'Community',
+            title: 'Social',
             items: [
+              {
+                label: 'Twitch',
+                href: 'https://twitch.tv/odatnurd',
+              },
+              {
+                label: 'YouTube',
+                href: 'https://youtube.com/@odatnurd',
+              },
               {
                 label: 'Discord',
                 href: 'https://discord.gg/b3x5AuwVVY',
@@ -89,15 +125,16 @@ const config = {
             title: 'More',
             items: [
               {
-                label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                label: 'Get the Code',
+                href: 'https://github.com/OdatNurd/devember-2022',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Omphalos. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Terence Martin (OdatNurd). Built with Docusaurus.`,
       },
       prism: {
+        defaultLanguage: 'javascript',
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },

@@ -1,0 +1,6 @@
+position: 3
+label: 'Guides'
+collapsed: true
+link:
+  type: generated-index
+  description: A guide to Omphalos; what it is and what you can use it for.

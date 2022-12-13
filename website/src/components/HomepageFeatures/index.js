@@ -9,7 +9,7 @@ const FeatureList = [
     description: (
       <>
         Create rich, interactive broadcast graphics for your streams using the
-        full power of the web technologies that you already know and love.
+        full power of the web. If you can design it, you can stream it.
       </>
     ),
   },
@@ -18,8 +18,8 @@ const FeatureList = [
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Change scenes, play sounds and videos; a fully configurable stream
-        production system at your fingertips.
+        Gain full control of your live stream. Overlay changes, scene swaps and
+        more are at your fingertips with Omphalos.
       </>
     ),
   },
@@ -28,9 +28,8 @@ const FeatureList = [
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Unleash your true streaming potential! I'm not entirely sure how that
-        is supposed to work, but if it doesn't, your purchase price will be
-        fully refunded.
+        Take your viewers' experience to the next level with Omphalos. Create
+        a truly unique streaming experience limited only by your imagination.
       </>
     ),
   },
