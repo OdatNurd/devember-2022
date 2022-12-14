@@ -1,5 +1,5 @@
 <script>
-  import { NavBar, Footer, Dashboard, DashboardPanel } from '$components';
+  import { NavBar, Dashboard, DashboardPanel } from '$components';
 </script>
 
 <div class="flex flex-col h-screen">
@@ -15,5 +15,4 @@
       </div>
     </div>
   </div>
-  <Footer />
 </div>
