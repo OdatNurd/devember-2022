@@ -22,5 +22,28 @@
   </div>
 
   <div class="navbar-end">
+    <div class="tooltip tooltip-bottom" data-tip="Graphics">
+      <button class="btn btn-circle" aria-label="Open Graphics Page">
+        <Icon name={'layer-group'} size="1.5rem" />
+      </button>
+    </div>
+
+    <div class="tooltip tooltip-bottom" data-tip="Mixer">
+      <button class="btn btn-circle" aria-label="Open Mixer Page">
+        <Icon name={'headphones-simple'} size="1.5rem" />
+      </button>
+    </div>
+
+    <div class="tooltip tooltip-bottom" data-tip="Docs">
+      <a target="_blank" rel="nofollow noreferrer" href="https://devember-2022.ruinouspileofcrap.com" class="btn btn-circle" aria-label="Open Documentation Site">
+        <Icon name={'book'} size="1.5rem" />
+      </a>
+    </div>
+
+    <div class="tooltip tooltip-left" data-tip="Settings">
+      <button class="btn btn-circle" aria-label="Open Settings Page">
+        <Icon name={'gear'} size="1.5rem" />
+      </button>
+    </div>
   </div>
 </div>
