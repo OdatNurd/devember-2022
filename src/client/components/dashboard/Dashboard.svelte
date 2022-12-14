@@ -3,11 +3,15 @@
 
   onMount(() => {
     let grid = GridStack.init({
-      cellHeight: 'auto', // or pixels; auto means same as column width
+      cellHeight: 'initial',
       float: true,
       margin: 4,
-      resizable: { handles: 'all'},
-      draggable: { handle: '.grid-stack-item-title', appendTo: 'body' }
+      resizable: { handles: 'e,se,s,sw,w'},
+      draggable: { handle: '.grid-stack-item-title', appendTo: 'body' },
+
+      // When this is false, when the window gets narrower than minW, the
+      // layout will change to a single column.
+      disableOneColumnMode: false,
     });
   });
 
