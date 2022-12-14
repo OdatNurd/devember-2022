@@ -5,6 +5,8 @@ import { loadBundles } from '#core/bundle_loader';
 
 import { resolve } from 'path';
 
+import fileRoutes from '@labyrinthos/file-routes/express';
+
 import jetpack from 'fs-jetpack'
 import express from 'express';
 import compression from 'compression';
@@ -55,6 +57,10 @@ async function launchServer() {
     log: undefined,
     bundleInfo: undefined,
   }
+
+  // Use the file router to set up the routes for the back end services that
+  // we expose to the UI.
+  app.use(await fileRoutes("src/server/routes"));
 
   // Discover and load all bundles; we get a list of routers that serve files
   // for any that have any; apply them all.
