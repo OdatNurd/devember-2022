@@ -97,9 +97,12 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
   // All of the assets of this type are going to be served out of a specific
   // folder in the package, which needs to exist and be a folder or we can't
   // serve anything.
+  //
+  // Unlike missing assets, this is a deal breaker on loading. We allow for
+  // missing files but not a broken folder.
   if (jetpack.exists(fullAssetPath) !== 'dir') {
     log.error(`bundle '${bundleName}' has a ${assetKey} path that does not exist: ${assetPath}`);
-    return router;
+    throw new BundleLoadError(`${assetKey} path is missing for bundle ${bundleName} (${assetPath})`);
   }
 
   // All of the URL's that we are going to add to the router are based on this
@@ -205,7 +208,9 @@ async function loadBundleExtension(api, manifest, bundleName) {
  * returning a router that will serve the panels and overlays for the bundle
  * as appropriate.
  *
- * If the bundle has no pages to serve, then no router will be returned.
+ * If the bundle has any panels or graphics that it needs to serve, the manifest
+ * will be given a "router" key that gives a router object that knows how to
+ * handle the appropriate routes.
  *
  * If there is any error in loading the bundle, such as a missing resource or
  * an error occurs while launching the extension code, this will raise an
@@ -240,8 +245,10 @@ async function loadBundle(api, manifest) {
   router = setupAssetRoutes(manifest, bundleName, 'panels', manifest.omphalos.panelPath, router);
   router = setupAssetRoutes(manifest, bundleName, 'graphics', manifest.omphalos.graphicPath, router);
 
-  // Return the router for the files in this bundle, if any.
-  return router;
+  // If there is a router object, add it to the manifest before we return.
+  if (router !== null) {
+    manifest.router = router;
+  }
 }
 
 
@@ -256,7 +263,10 @@ async function loadBundle(api, manifest) {
  *
  * Once that is done, each bundle is loaded in appropriate order to ensure that
  * dependencies are satisfied. If a bundle fails to load, its dependents will
- * also not be loaded. */
+ * also not be loaded.
+ *
+ * The return value is an object that keys all of the loaded bundles with their
+ * manifest information. */
 export async function loadBundles(api, appManifest) {
   // Discover all bundles that we can load and return a DAG that represents the
   // dependency structure between the bundles.
@@ -266,34 +276,28 @@ export async function loadBundles(api, appManifest) {
   // cyclic dependencies, determine the load order.
   const loadOrder = getBundleLoadOrder(bundles);
 
-  // As we laod bundles, if they need to serve any content they give us back a
-  // router object; we capture them here so that they can be applied to the
-  // server.
-  const bundleRouters = [];
-
-  // Loop over the load order and load each bundle in turn. We track which
-  // bundles successfully loaded so that we can verify if we should load a
-  // package if any of its dependencies did not load.
-  const loadedBundles = [];
+  // Loop over the load order and load each bundle in turn. As each bundle is
+  // loaded, we add it's manifest to this loaded bundle list; this allows us to
+  // elide any bundles whose dependents did not load.
+  const loadedBundles = {};
   for (const name of loadOrder) {
     try {
       // Check the list of dependencies against the list of loaded bundles; if
       // any are missing, we can't load this bundle.
       const deps = Object.keys(bundles[name].omphalos.deps);
       deps.forEach(depName => {
-        if (loadedBundles.includes(depName) === false) {
+        if (loadedBundles[depName] === undefined) {
           throw new BundleLoadError(`cannot load ${name}; dependency ${depName} did not load`)
         }
       });
 
-      // Looks good, load the bundle and capture the router, if any.
-      const bundle_router = await loadBundle(api, bundles[name]);
-      if (bundle_router !== null) {
-        bundleRouters.push(bundle_router);
-      }
+      // Load the bundle; this will throw an exception if there are any issues.
+      // If any routes need to be served, the manifest we pass in will be given
+      // a "router" key that includes an appropriate router.
+      await loadBundle(api, bundles[name]);
 
       // Add this bundle as one that loaded.
-      loadedBundles.push(name);
+      loadedBundles[name] = bundles[name];
     }
     catch (errorObj) {
       log.error(`error while loading ${name}: ${errorObj}`);
@@ -303,7 +307,10 @@ export async function loadBundles(api, appManifest) {
     }
   }
 
-  return bundleRouters;
+  // Return the list of loaded bundles now; this skips any that had load
+  // errors so that we don't accidentally provide their contents to the system
+  // at large.
+  return loadedBundles;
 }
 
 

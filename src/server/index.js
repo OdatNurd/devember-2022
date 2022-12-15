@@ -58,14 +58,25 @@ async function launchServer() {
     bundleInfo: undefined,
   }
 
+  // Discover and load all bundles; we get a list of routers that serve files
+  // for any that have any; apply them all.
+  const bundles = await loadBundles(api, manifest);
+  Object.values(bundles).forEach(manifest => {
+    if (manifest.router !== undefined) {
+      app.use(manifest.router)
+    }
+  });
+
+  /* Inject the list of bundles into request objects so that our API has access
+   * to them. */
+  app.use((req, res, next) => {
+    req.bundles = bundles;
+    next()
+  });
+
   // Use the file router to set up the routes for the back end services that
   // we expose to the UI.
   app.use(await fileRoutes("src/server/routes"));
-
-  // Discover and load all bundles; we get a list of routers that serve files
-  // for any that have any; apply them all.
-  const bundleRouters = await loadBundles(api, manifest);
-  bundleRouters.forEach(router => app.use(router));
 
   // Set up some middleware that will serve static files out of the static
   // folder so that we don't have to inline the pages in code.
