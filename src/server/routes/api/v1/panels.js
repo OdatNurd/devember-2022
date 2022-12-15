@@ -10,10 +10,11 @@ import { config } from '#core/config';
  * Part of this shape change will drop minimum and maximum dimension constraints
  * if they are identical to the original size, in favor of just marking the
  * panel as not being resizable. */
-function conformPanel(panel) {
+function conformPanel(bundle, panel) {
   // Convert the shape of the incoming panel into the values needed for the
   // outgoing value.
   const out = {
+    bundle,
     title: panel.title,
     content: panel.file,
     name: panel.name,
@@ -57,6 +58,7 @@ export const GET = {
 
   schema: {
     "root[]": {
+      "bundle": "string",
       "title": "string",
       "content": "string", // content is file
       "name": "string",
@@ -79,7 +81,7 @@ export const GET = {
     // them.
     for (const [bundle, manifest] of Object.entries(req.bundles)) {
       const bundle_panels = manifest.omphalos.panels ?? [];
-      panel_list.push(...bundle_panels.map(panel => conformPanel(panel)))
+      panel_list.push(...bundle_panels.map(panel => conformPanel(bundle, panel)));
     }
 
     // Return a status code of 200; because we're not using res.json() the

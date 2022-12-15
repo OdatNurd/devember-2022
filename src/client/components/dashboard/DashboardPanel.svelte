@@ -1,9 +1,15 @@
 <script>
-  export let title = 'title goes here'
+  export let title = 'title goes here';
   export let content = 'content goes here';
 
-  // If given, this ID is available in grid events to identify this panel.
-  export let id = undefined;
+  // The bundle the panel is from and the name that it has within that bundle;
+  // taken together these are used to construct a unique identifier for this
+  // panel.
+  export let bundle = 'unassigned';
+  export let name = 'unnamed'
+
+  // The ID value of the bundle comes from its name and bundle combination
+  let id = `${bundle}.${name}`;
 
   // Position of the panel; if either option is not provided, the position for
   // that axis is automatically set; so you can set x, y or both.
