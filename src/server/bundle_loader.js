@@ -189,7 +189,7 @@ async function loadBundleExtension(api, manifest, bundleName) {
   const bundle_api = {
     ...api,
     log: logger(bundleName),
-    bundleInfo: manifest
+    bundleInfo: structuredClone(manifest)
   }
 
   // Invoke the entrypoint to initialize the module
