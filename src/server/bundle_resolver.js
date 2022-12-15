@@ -458,12 +458,12 @@ export function discoverBundles(appManifest) {
  * The function calls itself recursively in a depth first search in order to
  * root the load in the leaf nodes that have no dependencies before considering
  * the bundles that rely on those dependencies. */
-export function getBundleLoadOrder(node, out_load_order=undefined) {
+export function getBundleLoadOrder(node, out_load_order=undefined, depth=0) {
   out_load_order ??= []
 
   for (const manifest of Object.values(node)) {
     // Recursively call ourselves on our dependency list, which may be empty.
-    getBundleLoadOrder(manifest.omphalos.deps, out_load_order);
+    getBundleLoadOrder(manifest.omphalos.deps, out_load_order, depth + 1);
 
     // If we haven't already been visited, add ourselves to the output load
     // order and mark ourselves. We might appear several times in the traversal
@@ -472,6 +472,13 @@ export function getBundleLoadOrder(node, out_load_order=undefined) {
       manifest.visited = true;
       out_load_order.push(manifest.name)
     }
+  }
+
+  // If we're about to return back from the outer call, trim the node that we
+  // have to remove the flags we placed there; this can't happen during the
+  // traversal since we need to know when we've visited everything.
+  if (depth === 0) {
+    Object.values(node).forEach(bundle => delete bundle.visited)
   }
 
   return out_load_order;
