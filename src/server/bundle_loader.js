@@ -158,17 +158,18 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
  *
  * It is not considered an error for there to be no extension. */
 async function loadBundleExtension(api, manifest, bundleName) {
-  const extensionFile = manifest.omphalos.extension;
-  const fullExtensionFile = resolve(manifest.omphalos.location, extensionFile);
-
   log.info(`loading code extensions for '${bundleName}'`);
 
   // If the manifest doesn't include an extension endpoint, then there is
   // nothing for us to do, so we can leave.
-  if (extensionFile === null) {
+  const extensionFile = manifest.omphalos.extension;
+  if (extensionFile === undefined) {
     log.warn(`bundle '${bundleName}' has no extensions; skipping setup`);
     return;
   }
+
+  // Get the path to the full extension file entry point.
+  const fullExtensionFile = resolve(manifest.omphalos.location, extensionFile);
 
   log.debug(`${extensionFile} maps to ${fullExtensionFile}`);
   if (jetpack.exists(fullExtensionFile) !== 'file') {
