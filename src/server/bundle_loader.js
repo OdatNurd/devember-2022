@@ -245,10 +245,8 @@ async function loadBundle(api, manifest) {
   router = setupAssetRoutes(manifest, bundleName, 'panels', manifest.omphalos.panelPath, router);
   router = setupAssetRoutes(manifest, bundleName, 'graphics', manifest.omphalos.graphicPath, router);
 
-  // If there is a router object, add it to the manifest before we return.
-  if (router !== null) {
-    manifest.router = router;
-  }
+  // Return the router back to the caller; may be null.
+  return router;
 }
 
 
@@ -278,8 +276,10 @@ export async function loadBundles(api, appManifest) {
 
   // Loop over the load order and load each bundle in turn. As each bundle is
   // loaded, we add it's manifest to this loaded bundle list; this allows us to
-  // elide any bundles whose dependents did not load.
+  // elide any bundles whose dependents did not load. We also store any routers
+  // we get for later return.
   const loadedBundles = {};
+  const routers = [];
   for (const name of loadOrder) {
     try {
       // Check the list of dependencies against the list of loaded bundles; if
@@ -294,7 +294,10 @@ export async function loadBundles(api, appManifest) {
       // Load the bundle; this will throw an exception if there are any issues.
       // If any routes need to be served, the manifest we pass in will be given
       // a "router" key that includes an appropriate router.
-      await loadBundle(api, bundles[name]);
+      const router = await loadBundle(api, bundles[name]);
+      if (router !== null) {
+        routers.push(router);
+      }
 
       // Add this bundle as one that loaded.
       loadedBundles[name] = bundles[name];
@@ -307,10 +310,9 @@ export async function loadBundles(api, appManifest) {
     }
   }
 
-  // Return the list of loaded bundles now; this skips any that had load
-  // errors so that we don't accidentally provide their contents to the system
-  // at large.
-  return loadedBundles;
+  // Return the array of routers that we created (if any) and the list of
+  // loaded bundle manifests.
+  return { routers, bundles: loadedBundles };
 }
 
 

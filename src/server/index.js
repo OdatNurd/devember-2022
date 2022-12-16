@@ -60,12 +60,8 @@ async function launchServer() {
 
   // Discover and load all bundles; we get a list of routers that serve files
   // for any that have any; apply them all.
-  const bundles = await loadBundles(api, manifest);
-  Object.values(bundles).forEach(manifest => {
-    if (manifest.router !== undefined) {
-      app.use(manifest.router)
-    }
-  });
+  const { bundles, routers } = await loadBundles(api, manifest);
+  routers.forEach(router => app.use(router));
 
   /* Inject the list of bundles into request objects so that our API has access
    * to them. */
