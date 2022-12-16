@@ -6,15 +6,10 @@
 
 <div class="flex navbar bg-neutral text-neutral-content">
   <div class="navbar-start">
-
-    <!-- The mobile menu; not visible on larger screen layouts. -->
-    <div class="dropdown">
-      <div class="btn btn-ghost lg:hidden">
-        <Icon name="burger" size="1.5rem" />
-      </div>
-    </div>
-
     <Logo size={36} />
+    <div class="tabs ml-4">
+      <a class="tab tab-lg tab-bordered tab-active">Workspace</a>
+    </div>
   </div>
 
   <div class="navbar-center hidden lg:flex">
