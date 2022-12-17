@@ -151,7 +151,6 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
 
 // =============================================================================
 
-
 /* Check the bundle manfest given to see if it contains any extension code or
  * not. If it does, then the file will be loaded, its internal extension point
  * will be gathered, and then executed.
@@ -159,8 +158,12 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
  * If any error occurs while loading the bundle, an exception will be thrown to
  * signal that error condition; otherwise we return normally.
  *
- * It is not considered an error for there to be no extension. */
-async function loadBundleExtension(api, manifest, bundleName) {
+ * It is not considered an error for there to be no extension.
+ *
+ * The return value is an object that represents the list of symbols that the
+ * imported module exported for other bundles to use. This could be an empty
+ * object. */
+async function loadBundleExtension(api, manifest, bundleName, exportSymbols) {
   log.info(`loading code extensions for '${bundleName}'`);
 
   // If the manifest doesn't include an extension endpoint, then there is
@@ -168,8 +171,15 @@ async function loadBundleExtension(api, manifest, bundleName) {
   const extensionFile = manifest.omphalos.extension;
   if (extensionFile === undefined) {
     log.warn(`bundle '${bundleName}' has no extensions; skipping setup`);
-    return;
+    return {};
   }
+
+  // Grab a symbol out of a module; looks first in the top level, and if the
+  // symbol is not there, grabs it from the default if possible. Will return
+  // undefined if the symbol does not appear in either location or if there
+  // is no default export list at all when trying to look in it.
+  const getSymbol = (mod, sym) => mod[sym] ? mod[sym] :
+                                 (mod.default ? mod.default[sym] : undefined);
 
   // Get the path to the full extension file entry point.
   const fullExtensionFile = resolve(manifest.omphalos.location, extensionFile);
@@ -183,7 +193,9 @@ async function loadBundleExtension(api, manifest, bundleName) {
   // Import the module from the bundle location; the extension file needs to
   // be made explicitly relative to bundle.
   const extension = await import(fullExtensionFile);
-  if (extension.main === undefined) {
+  const entryPoint = getSymbol(extension, 'main');
+
+  if (entryPoint === undefined) {
     throw new BundleLoadError(`the extension endoint does not export the symbol 'main'`);
   }
 
@@ -192,11 +204,18 @@ async function loadBundleExtension(api, manifest, bundleName) {
   const bundle_api = {
     ...api,
     log: logger(bundleName),
-    bundleInfo: structuredClone(manifest)
+    bundleInfo: structuredClone(manifest),
+
+    // Build a require function that looks up symbols from the list of exported
+    // symbols from other bundles that loaded before us.
+    require: modName => exportSymbols[modName] ?? {}
   }
 
   // Invoke the entrypoint to initialize the module
-  await extension.main(bundle_api);
+  await entryPoint(bundle_api);
+
+  // Return the list of symbols that this module has declared for export
+  return getSymbol(extension, 'symbols') ?? {};
 }
 
 
@@ -208,6 +227,10 @@ async function loadBundleExtension(api, manifest, bundleName) {
  * returning a router that will serve the panels and overlays for the bundle
  * as appropriate.
  *
+ * The loader expects to get an object with the symbols that were exported from
+ * other bundles that loaded before this one. This is keyed on the bundle name,
+ * and will have empty objects for bundles that loaded but had no symbols.
+ *
  * If the bundle has any panels or graphics that it needs to serve, the manifest
  * will be given a "router" key that gives a router object that knows how to
  * handle the appropriate routes.
@@ -215,7 +238,7 @@ async function loadBundleExtension(api, manifest, bundleName) {
  * If there is any error in loading the bundle, such as a missing resource or
  * an error occurs while launching the extension code, this will raise an
  * exception. */
-async function loadBundle(api, manifest) {
+async function loadBundle(api, manifest, exportSymbols) {
   let router = null;
 
   // Alias the name of the bundle for simplicity.
@@ -237,7 +260,10 @@ async function loadBundle(api, manifest) {
   // If this bundle has an extension, then load it now. If there is an extension
   // but there is some issue with it, this will raise an exception, which will
   // be caught by the loader.
-  await loadBundleExtension(api, manifest, bundleName);
+  //
+  // The return value (assuming no exception) is an object which contains the
+  // symbols this bundle exported, which might be empty/
+  const symbols = await loadBundleExtension(api, manifest, bundleName, exportSymbols);
 
   // Set up the panel and graphic routes as needed. These don't signal an error
   // back because it's not as catastrophic if a panel or graphic is missing;
@@ -245,8 +271,8 @@ async function loadBundle(api, manifest) {
   router = setupAssetRoutes(manifest, bundleName, 'panels', manifest.omphalos.panelPath, router);
   router = setupAssetRoutes(manifest, bundleName, 'graphics', manifest.omphalos.graphicPath, router);
 
-  // Return the router back to the caller; may be null.
-  return router;
+  // Return the router and exported symbols back to the caller; may be null.
+  return { router, symbols };
 }
 
 
@@ -264,7 +290,8 @@ async function loadBundle(api, manifest) {
  * also not be loaded.
  *
  * The return value is an object that keys all of the loaded bundles with their
- * manifest information. */
+ * manifest information, an array of router objects that route traffic for
+ * bundles, and the complete list of exported symbols. */
 export async function loadBundles(api, appManifest) {
   // Discover all bundles that we can load and return a DAG that represents the
   // dependency structure between the bundles.
@@ -279,6 +306,7 @@ export async function loadBundles(api, appManifest) {
   // elide any bundles whose dependents did not load. We also store any routers
   // we get for later return.
   const loadedBundles = {};
+  const exportSymbols = {};
   const routers = [];
   for (const name of loadOrder) {
     try {
@@ -294,13 +322,14 @@ export async function loadBundles(api, appManifest) {
       // Load the bundle; this will throw an exception if there are any issues.
       // If any routes need to be served, the manifest we pass in will be given
       // a "router" key that includes an appropriate router.
-      const router = await loadBundle(api, bundles[name]);
+      const { router, symbols } = await loadBundle(api, bundles[name], exportSymbols);
       if (router !== null) {
         routers.push(router);
       }
 
       // Add this bundle as one that loaded.
       loadedBundles[name] = bundles[name];
+      exportSymbols[name] = symbols;
     }
     catch (errorObj) {
       log.error(`error while loading ${name}: ${errorObj}`);
@@ -312,7 +341,7 @@ export async function loadBundles(api, appManifest) {
 
   // Return the array of routers that we created (if any) and the list of
   // loaded bundle manifests.
-  return { routers, bundles: loadedBundles };
+  return { routers, exportSymbols, bundles: loadedBundles };
 }
 
 
