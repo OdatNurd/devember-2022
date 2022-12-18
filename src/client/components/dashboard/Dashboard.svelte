@@ -1,5 +1,5 @@
 <script>
-  import { DashboardPanel } from '$components';
+  import DashboardPanel from './DashboardPanel.svelte';
 
   // The grid stack instance; this gets created only after all of the panels
   // load, in the reactive block below.
