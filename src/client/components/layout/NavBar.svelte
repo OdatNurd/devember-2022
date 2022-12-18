@@ -8,7 +8,7 @@
   <div class="navbar-start">
     <Logo size={36} />
     <div class="tabs ml-4">
-      <a class="tab tab-lg tab-bordered tab-active">Workspace</a>
+      <button class="tab tab-lg tab-bordered tab-active">Workspace</button>
     </div>
   </div>
 
