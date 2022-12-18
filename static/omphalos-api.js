@@ -1,0 +1,1 @@
+console.log('pretend that this is initializing the omphalos API')

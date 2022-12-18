@@ -4,6 +4,9 @@ import { logger } from '#core/logger';
 import { discoverBundles, getBundleLoadOrder } from '#core/bundle_resolver';
 import { resolve, basename } from 'path';
 
+import { readFileSync } from 'fs';
+import { JSDOM } from 'jsdom';
+
 import express from 'express';
 import jetpack from 'fs-jetpack';
 
@@ -28,33 +31,35 @@ export class BundleLoadError extends Error {
 // =============================================================================
 
 
-/* Handle serving static files from a given folder
-
 /* This function will respond to a express route request by serving the content
  * of the static file provided. The filename must be an absolute path for the
  * serve to work.
  *
  * This can be used to transmit any file, although it is primarily intended for
  * serving panel and overlay pages. */
-// Incoming file must be an absolute filename
-function serveStaticFile(req, res, staticFile) {
+function serveStaticFile(req, res, assetKey, staticFile) {
   const log = logger('express');
   log.debug(`serving ${staticFile}`);
 
-  const options = {
-    headers: {
-      'x-timestamp': Date.now(),
-      'x-sent': true,
-      'x-item-filename': basename(staticFile)
-    }
-  };
+  // Load the raw content from the file and parse it into a DOM object
+  const dom = new JSDOM(readFileSync(staticFile, 'utf-8'));
 
-  res.sendFile(staticFile, options, err => {
-    if (err) {
-      log.error(`error sending ${staticFile}: ${err}`);
-      res.status(404).send('error sending file');
-    }
-  });
+  // Create an element that contains the content that we want to insert into the
+  // page; this is slightly different depending on wether this is an overlay
+  // or a panel.
+  const content = dom.window.document.createElement('content');
+  content.innerHTML = `
+    <link rel="stylesheet" type="text/css" href="/defaults/css/${assetKey}.css" >
+    <script src="/omphalos-api.js"></script>
+    <script>window.omphalosConfig = ${config.toString()}</script>
+  `;
+
+  // Add the children of the element that we created to the start of the head
+  // element in the page when we serve it.
+  dom.window.document.querySelector('head').prepend(...content.children);
+
+  // Send the result back.
+  res.send(dom.serialize());
 }
 
 
@@ -137,7 +142,7 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
     }
 
     // Add in a route for it to serve this specific static file.
-    router.get(staticUrl, (req, res) => serveStaticFile(req, res, staticFile));
+    router.get(staticUrl, (req, res) => serveStaticFile(req, res, assetKey, staticFile));
   }
 
   // Now that we're done with the individual files, set up a route to serve the
