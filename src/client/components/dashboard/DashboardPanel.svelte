@@ -34,6 +34,10 @@
   // Stop this panel from being resized or moved BY THE USER
   export let noResize = false;
   export let noMove = false;
+
+  // When true, the content area of the panel is blocked; no interaction with
+  // it is possible.
+  export let blocked = false;
 </script>
 
 
@@ -47,30 +51,65 @@
                              gs-no-move={noMove}
                              >
   <div class="grid-stack-item-content">
-    <div class="grid-stack-item-title">{title}</div>
-    <div class="panel-content">
-      {content}
+    <div class="grid-stack-item-title bg-primary text-primary-content p-1">{title}</div>
+    <div class="panel-content bg-neutral text-neutral-content p-0 m-0 h-full w-full relative">
+      <iframe src={`/bundles/${bundle}/panels/${content}`} {title}> </iframe>
+      <div class="blocker" class:blocked></div>
     </div>
   </div>
 </div>
 
 <style>
+  /* The wrapper div that gridstack uses to control this item. This is the
+   * overall container for the whole panel.. */
   .grid-stack-item {
     overflow: hidden;
   }
 
+  /* The wrapper div for all of the content in our panel; this wraps both the
+   * title and the actual content part. */
+  .grid-stack-item-content {
+    overflow: hidden !important;
+    display: grid;
+    grid-template-rows: min-content auto;
+  }
+
+  /* The wrapper div that represents the title bar of the panel; you can click
+   * and drag on this beast if you like, to move the thing around. */
   .grid-stack-item-title   {
     font-size: 110%;
     font-weight: bold;
-    background: yellow;
-    color: black;
-    border-bottom: 1px solid black;
+
     cursor: move;
   }
 
-  .grid-stack-item-content {
-    background-color: #18BC9C;
-    color: black;
+  /* The wrapper that holds the actual contents of the panel itself. */
+  .panel-content {
     overflow: hidden !important;
+  }
+
+  /* A div that sits on top of the iframe and will block access to it. This is
+   * selectively enabled whenever a drag operation on a panel starts, and is
+   * then turned off as needed. */
+  .blocker {
+    display: none;
+    position: absolute;
+    background: black;
+    opacity: 0.5;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  }
+
+  /* This class is applied when the panel is blocked; it essentially "turns on"
+   * the blocker class above as needed. */
+  .blocked {
+    display: block;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
   }
 </style>

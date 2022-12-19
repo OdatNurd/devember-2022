@@ -6,6 +6,10 @@
   let grid = null;
   let panelWrapper = null;
 
+  // When this is true, all of the panel items are blocked from taking any
+  // mouse interaction.
+  let blocked = false;
+
   const fetchUIPanels = async () => {
     const res = await fetch('/api/v1/panels');
     return res.json();
@@ -26,6 +30,13 @@
       // layout will change to a single column.
       disableOneColumnMode: false,
     });
+
+    // Resizing and moving are an issue with iframes in the page because if
+    // the mouse covers them, the eat events. So, as long as we are dragging
+    // or resizing, block the panels from being interactive.
+    grid.on('resizestart resizestop dragstart dragstop' , event => {
+      blocked = (event.type.includes('start'));
+    });
   }
 </script>
 
@@ -35,7 +46,7 @@
   {:then panels}
     <div class="grid-stack" bind:this={panelWrapper}>
       {#each panels as panel (panel.name)}
-        <DashboardPanel {...panel} />
+        <DashboardPanel {...panel} {blocked} />
       {/each}
     </div>
   {/await}
