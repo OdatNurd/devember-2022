@@ -37,12 +37,41 @@ export class BundleLoadError extends Error {
  *
  * This can be used to transmit any file, although it is primarily intended for
  * serving panel and overlay pages. */
-function serveStaticFile(req, res, assetKey, staticFile) {
+function serveStaticFile(req, res, assetKey, manifest, staticFile) {
   const log = logger('express');
-  log.debug(`serving ${staticFile}`);
+
+  // Log the full path for debugging reasons.
+  log.debug(`serving ${assetKey}: ${staticFile}`);
+
+  // Get the raw page content of this asset
+  let assetContent;
+  if (jetpack.exists(staticFile) === 'file') {
+    assetContent = readFileSync(staticFile, 'utf-8');
+  } else {
+    // Determine the short name for this asset; this is the internal location
+    // relative to the bundle (and including bundle name) rather than the full
+    // absolute path.
+    const prefix = resolve(manifest.omphalos.location, '..');
+    const shortName = staticFile.substring(prefix.length + 1);
+
+    // Generate a simple error page.
+    assetContent = `
+       <!DOCTYPE html>
+       <html>
+       <head>
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1">
+         <title>Panel Missing!</title>
+       </head>
+       <body>
+         Unable to locate panel file: <strong>${shortName}</strong>
+       </body>
+       </html>
+     `;
+  }
 
   // Load the raw content from the file and parse it into a DOM object
-  const dom = new JSDOM(readFileSync(staticFile, 'utf-8'));
+  const dom = new JSDOM(assetContent);
 
   // Create an element that contains the content that we want to insert into the
   // page; this is slightly different depending on wether this is an overlay
@@ -124,11 +153,11 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
     const staticUrl = `${baseUrl}/${asset.file}`
 
     // Verify that the static file that we're going to serve actually exists;
-    // if not, skip adding a route for it.
+    // We still set up a route for it, or when it appears there at runtime it
+    // will get sent as a regular asset and not get properly "massaged".
     log.debug(`${staticUrl} maps to ${assetPath}/${asset.file}`);
     if (jetpack.exists(staticFile) !== 'file') {
       log.error(`file does not exist: ${staticFile}`)
-      continue;
     }
 
     // If the static file is not rooted in the asset path, then a relative path
@@ -142,7 +171,7 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
     }
 
     // Add in a route for it to serve this specific static file.
-    router.get(staticUrl, (req, res) => serveStaticFile(req, res, assetKey, staticFile));
+    router.get(staticUrl, (req, res) => serveStaticFile(req, res, assetKey, manifest, staticFile));
   }
 
   // Now that we're done with the individual files, set up a route to serve the
