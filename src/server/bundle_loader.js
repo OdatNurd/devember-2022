@@ -37,7 +37,7 @@ export class BundleLoadError extends Error {
  *
  * This can be used to transmit any file, although it is primarily intended for
  * serving panel and overlay pages. */
-function serveStaticFile(req, res, assetKey, manifest, staticFile) {
+function serveStaticFile(req, res, assetKey, asset, manifest, staticFile) {
   const log = logger('express');
 
   // Log the full path for debugging reasons.
@@ -79,9 +79,12 @@ function serveStaticFile(req, res, assetKey, manifest, staticFile) {
   const content = dom.window.document.createElement('content');
   content.innerHTML = `
     <link rel="stylesheet" type="text/css" href="/defaults/css/${assetKey}.css" >
+    <script>
+      window.omphalosConfig = ${config.toString()}
+      window.assetConfig = ${JSON.stringify(asset)}
+    </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
-    <script>window.omphalosConfig = ${config.toString()}</script>
   `;
 
   // Add the children of the element that we created to the start of the head
@@ -172,7 +175,7 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
     }
 
     // Add in a route for it to serve this specific static file.
-    router.get(staticUrl, (req, res) => serveStaticFile(req, res, assetKey, manifest, staticFile));
+    router.get(staticUrl, (req, res) => serveStaticFile(req, res, assetKey, asset, manifest, staticFile));
   }
 
   // Now that we're done with the individual files, set up a route to serve the
