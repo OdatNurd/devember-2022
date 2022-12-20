@@ -111,6 +111,57 @@ async function launchServer() {
     }
   });
 
+  // Our event solution is:
+  //
+  //  - rooms will equate to bundle names
+  //  - there will be a specific 'join' message from clients that tells the
+  //    server to join them to a room; the room is the bundle name
+  //  - the protocol for sending events is to send an "event" message with
+  //    an object payload:
+  //      - "bundle": for the bundle to direct to; if not given, goes everywhere
+  //      - "data": the actual payload of the message; can be anything.
+  //
+  // The code below is a small version of that concept that uses the panel name
+  // as the room instead, so we don't need so many bundles to test with.
+
+  // Listen for connections and disconnections an announce them.
+  io.on('connection', socket => {
+    log.info(`incoming connection for ${socket.id}`);
+
+    // Log a disconnect when it happens. Sockets get dropped from rooms when
+    // this happens (or at least, they better; verify that conclusively).
+    socket.on('disconnect', () => {
+      log.info(`socket is disconnecting: ${socket.id}`)
+    });
+
+    // When the socket sends a join message, join it to that channel; channels
+    // are a server side only concept which seems mildly wonky in its abstract
+    // setup.
+    socket.on("join", room => {
+      log.info(`socket is joining room ${room}: ${socket.id}`);
+      socket.join(room);
+    });
+
+    // When messages arrive, they can either be for specific rooms, or they
+    // can be global; if there is a 'room' key in the data, send the payload
+    // there; otherwise the payload is just global.
+    socket.on('msg', data => {
+      console.dir(data, { depth: null });
+
+      // If there is not a room, broadcast the message to everyone but the
+      // person that sent it.
+      if (data.room === undefined) {
+        socket.broadcast.emit('msg', data.msg);
+
+      // There is a room; broadcast the message to everyone in that room except
+      // the socket that sent it (which may or may not actually be in the room,
+      // but whatever).
+      } else {
+        socket.to(data.room).emit('msg', data.msg)
+      }
+    })
+  });
+
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');
   await server.listen(webPort, () => {
