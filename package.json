@@ -34,6 +34,8 @@
     "jsdom": "^20.0.3",
     "json5": "^2.2.1",
     "semver": "^7.3.8",
+    "socket.io": "^4.5.4",
+    "socket.io-client": "^4.5.4",
     "svelte": "^3.53.1",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1"

@@ -85,3 +85,32 @@ it as a GUI application.
 Controls whether log output is sent to a file or not, and if so, what the
 filename template for the file is. The filename can be anything you like;
 include `%DATE%` to insert the current date into the filename.
+
+## cors
+
+The options here control `CORS`; from [MDN][1]:
+
+> Cross-Origin Resource Sharing (CORS) is an HTTP-header based mechanism that
+allows a server to indicate any origins (domain, scheme, or port) other than
+its own from which a browser should permit loading resources.
+
+
+### origin
+
+* environment variable: ***CORS_ORIGIN***
+* default: `[]`
+
+This contains a list of extra origins to allow requests from; items in the
+list are regular strings unless they start and end with a `/` character, in
+which case they are treated as regular expressions.
+
+```json
+"cors": {
+  "origin": [
+    "/chrome-extension:\/\/.*/",
+    "https://hoppscotch.io"
+  ]
+}
+```
+
+  [1]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS

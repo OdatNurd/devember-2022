@@ -79,6 +79,7 @@ function serveStaticFile(req, res, assetKey, manifest, staticFile) {
   const content = dom.window.document.createElement('content');
   content.innerHTML = `
     <link rel="stylesheet" type="text/css" href="/defaults/css/${assetKey}.css" >
+    <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
     <script>window.omphalosConfig = ${config.toString()}</script>
   `;

@@ -7,6 +7,8 @@ import { resolve } from 'path';
 
 import fileRoutes from '@labyrinthos/file-routes/express';
 
+import { Server } from 'socket.io';
+
 import jetpack from 'fs-jetpack'
 import express from 'express';
 import compression from 'compression';
@@ -80,6 +82,34 @@ async function launchServer() {
 
   // Create a server to serve our content
   const server = http.createServer(app);
+
+  // The configuration tells us which, if any, extra hosts should be allowed to
+  // make requests.
+  const corsOrigin = config.get('cors.origin').map(entry => {
+    if (entry.startsWith('/') && entry.endsWith('/')) {
+      return new RegExp(entry.substring(1, entry.length - 1));
+    }
+
+    return entry;
+  });
+
+  if (corsOrigin.length !== 0) {
+    log.info(`CORS origin: ${corsOrigin}`);
+  } else {
+    log.info('no extra CORS origin added')
+  }
+
+  // Create a socket-io server using the eiows server as the back end, wrapped
+  // inside of our main server.
+  const io = new Server(server, {
+//    wsEngine: eiows.Server,
+    cors: {
+      origin: corsOrigin,
+      // Maybe needed; this is not hardly a correct list, one assumes. I've
+      // certainly never vetted it.
+      // methods: ["GET", "POST"]
+    }
+  });
 
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');

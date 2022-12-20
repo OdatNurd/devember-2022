@@ -67,6 +67,15 @@ export const config = convict({
     default: 3000
   },
 
+  cors: {
+    origin: {
+      doc: 'The list of CORS hosts to allow as a request origin',
+      format: Array,
+      env: 'CORS_ORIGIN',
+      default: []
+    }
+  },
+
   // Options taht control our logging output; these allow you to specify the
   // levels of logs that are sent out, wether the logs get sent to the console,
   // to a file, or both, and what the timestamps look like.

@@ -34,5 +34,17 @@
     "timestamp": "YYYY-MM-DD HH:mm:ss.SSS",
     "console": true,
     "file": "%DATE%_omphalos.log"
+  },
+
+  // The host that the system is running on is always able to talk to the
+  // back end. In order to allow other hosts through, you can add masks to
+  // this array.
+  //
+  // Items in this list can be regular expressions if they start and end
+  //  with the / character as they would in JS.
+  // e.g.
+  //    "origin": ["/chrome-extension:\/\/.*/","https://hoppscotch.io"]
+  "cors": {
+    "origin": []
   }
 }
