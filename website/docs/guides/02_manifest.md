@@ -175,6 +175,7 @@ all of the graphic files should be relative to.
     "graphics": [
       {
         "file": "index.html",
+        "name": "overlay-one",
         "size": {
           "width": 1280,
           "height": 720,
@@ -193,6 +194,13 @@ exposes to the dashboard.
 * required
 
 The HTML file that provides the content for this graphic.
+
+#### name
+
+* optional
+
+The internal name for this graphic; if this is not given, it will be set the
+same as the file that represents the overlay.
 
 #### size
 

@@ -109,6 +109,7 @@ const validBundleManifest = joker.validator({
     // The name of the file in the graphic is relative to the panelPath.
     "?graphics[]": {
       "file": "string",
+      "?name": "string",
       "size": {
         "width": "int",
         "height": "int"
@@ -418,6 +419,15 @@ export function discoverBundles(appManifest) {
         // they are not present.
         manifest.omphalos.panelPath ??= 'panels';
         manifest.omphalos.graphicPath ??= 'graphics';
+
+        // If there any graphics, ensure that they all have a name field; use
+        // the file as a backup if there is not.
+        const graphics = manifest.omphalos.graphics ?? [];
+        graphics.forEach(graphic => {
+          if (graphic.name === undefined) {
+            graphic.name = graphic.file;
+          }
+        })
 
         // Save it now.
         bundles[manifest.name] = manifest;
