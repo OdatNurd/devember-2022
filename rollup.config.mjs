@@ -29,4 +29,16 @@ export default [
       copyStatic("static")
     ],
   },
+  {
+    input: 'src/client/api/api.js',
+    output: {
+      file: `www/omphalos-api.js`,
+      format: 'iife',
+      name: 'omphalos'
+    },
+    plugins: [
+      commonjs(),
+      resolve({ browser: true }),
+    ]
+  }
 ]

@@ -21,7 +21,8 @@
   "private": false,
   "type": "module",
   "imports": {
-    "#core/*": "./src/server/*.js"
+    "#core/*": "./src/server/*.js",
+    "#api/*": "./src/client/api/*.js"
   },
   "dependencies": {
     "@axel669/joker": "^0.3.2",
