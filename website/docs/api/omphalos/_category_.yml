@@ -1,0 +1,6 @@
+position: 2
+label: 'Omphalos Object'
+collapsed: true
+link:
+  type: generated-index
+  description: A reference for the omphalos object, which contains the API
