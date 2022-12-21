@@ -79,12 +79,11 @@ function serveStaticFile(req, res, assetKey, asset, manifest, staticFile) {
   const content = dom.window.document.createElement('content');
   content.innerHTML = `
     <link rel="stylesheet" type="text/css" href="/defaults/css/${assetKey}.css" >
-    <script>
-      window.omphalosConfig = ${config.toString()}
-      window.assetConfig = ${JSON.stringify(asset)}
-    </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
+    <script>
+      omphalos.__init_api(${JSON.stringify(manifest)}, ${JSON.stringify(asset)}, ${config.toString()})
+    </script>
   `;
 
   // Add the children of the element that we created to the start of the head
