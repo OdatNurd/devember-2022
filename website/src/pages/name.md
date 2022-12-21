@@ -17,14 +17,16 @@ than just `devember-2022`.
 
 So, being the clever individual that I am, I went to an online thesaurus and
 looked for words that mean the same thing as "control panel" looking for
-inspiration, and the word `omphalos` caught my eye.
+inspiration, and amongst the many synonyms the word `omphalos` caught my eye.
 
-According to [Merriam Webster][3]:
+Why? Well, according to [Merriam Webster][3]:
 
 ***omphalos*** - *noun* <br/>
 om·pha·los ˈäm(p)-fə-ˌläs<br />
 
-    a central point : HUB, FOCAL POINT
+```plain
+a central point : HUB, FOCAL POINT
+```
 
 ```plain
 Omphalos originated as an ancient Greek word meaning "navel" and is
@@ -44,9 +46,12 @@ In the 1920s, "omphalos" made another contribution to English via the word
 omphaloskepsis, which means "contemplation of one's navel."
 ```
 
-The definition and meaning of the word tickled me, and the more I thought about
-it the more I could not resist naming the application that. And so, here we
-are.
+The definition and meaning of the word tickled me. Center of Activity seems
+like a great connotation for a project like this. Add in that the name is also
+related to navel gazing, and the more I thought about it the more I could not
+resist naming the application that.
+
+And so, here we are.
 
   [1]: https://twitch.tv/odatnurd
   [2]: https://devember.org/whatisit/

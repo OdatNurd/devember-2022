@@ -28,3 +28,9 @@
   --ifm-color-primary-lightest: #4fbfdd;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Headers are used for page titles; give a little bit of separation between
+ * them and the page. */
+h1 {
+  border-bottom: 1px solid;
+}

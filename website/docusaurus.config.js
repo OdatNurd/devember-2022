@@ -22,6 +22,11 @@ const config = {
     locales: ['en'],
   },
 
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
+
   presets: [
     [
       'classic',
@@ -132,7 +137,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Terence Martin (OdatNurd). Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Terence Martin (OdatNurd). Docs by Docusaurus.`,
       },
       prism: {
         defaultLanguage: 'javascript',
