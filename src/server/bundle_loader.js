@@ -200,7 +200,7 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
  * The return value is an object that represents the list of symbols that the
  * imported module exported for other bundles to use. This could be an empty
  * object. */
-async function loadBundleExtension(omphalos, manifest, bundleName, exportSymbols) {
+async function loadBundleExtension(omphalos, manifest, bundleName) {
   log.info(`loading code extensions for '${bundleName}'`);
 
   // If the manifest doesn't include an extension endpoint, then there is
@@ -242,11 +242,7 @@ async function loadBundleExtension(omphalos, manifest, bundleName, exportSymbols
     ...omphalos,
 
     log: logger(bundleName),
-    bundleConfig: structuredClone(manifest),
-
-    // Build a require function that looks up symbols from the list of exported
-    // symbols from other bundles that loaded before us.
-    require: modName => exportSymbols[modName] ?? {}
+    bundleConfig: structuredClone(manifest)
   }
 
   // Invoke the entrypoint to initialize the module
@@ -276,7 +272,7 @@ async function loadBundleExtension(omphalos, manifest, bundleName, exportSymbols
  * If there is any error in loading the bundle, such as a missing resource or
  * an error occurs while launching the extension code, this will raise an
  * exception. */
-async function loadBundle(omphalos, manifest, exportSymbols) {
+async function loadBundle(omphalos, manifest) {
   let router = null;
 
   // Alias the name of the bundle for simplicity.
@@ -301,7 +297,7 @@ async function loadBundle(omphalos, manifest, exportSymbols) {
   //
   // The return value (assuming no exception) is an object which contains the
   // symbols this bundle exported, which might be empty/
-  const symbols = await loadBundleExtension(omphalos, manifest, bundleName, exportSymbols);
+  const symbols = await loadBundleExtension(omphalos, manifest, bundleName);
 
   // Set up the panel and graphic routes as needed. These don't signal an error
   // back because it's not as catastrophic if a panel or graphic is missing;
@@ -344,7 +340,6 @@ export async function loadBundles(omphalos, appManifest) {
   // elide any bundles whose dependents did not load. We also store any routers
   // we get for later return.
   const loadedBundles = {};
-  const exportSymbols = {};
   const routers = [];
   for (const name of loadOrder) {
     try {
@@ -360,14 +355,14 @@ export async function loadBundles(omphalos, appManifest) {
       // Load the bundle; this will throw an exception if there are any issues.
       // If any routes need to be served, the manifest we pass in will be given
       // a "router" key that includes an appropriate router.
-      const { router, symbols } = await loadBundle(omphalos, bundles[name], exportSymbols);
+      const { router, symbols } = await loadBundle(omphalos, bundles[name]);
       if (router !== null) {
         routers.push(router);
       }
 
       // Add this bundle as one that loaded.
       loadedBundles[name] = bundles[name];
-      exportSymbols[name] = symbols;
+      omphalos.exportSymbols[name] = symbols;
     }
     catch (errorObj) {
       log.error(`error while loading ${name}: ${errorObj}`);
@@ -379,7 +374,7 @@ export async function loadBundles(omphalos, appManifest) {
 
   // Return the array of routers that we created (if any) and the list of
   // loaded bundle manifests.
-  return { routers, exportSymbols, bundles: loadedBundles };
+  return { routers, bundles: loadedBundles };
 }
 
 

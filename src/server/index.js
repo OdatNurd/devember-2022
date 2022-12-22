@@ -52,10 +52,15 @@ async function launchServer() {
   // A common API object that is passed to all extension code when it's loaded.
   // This is augmented in the bundle loader to provide the the bundle specific
   // portions of the API, such as a
+  const exportSymbols = {};
   const omphalos = {
-    // This is installed at bundle load time, when the list of symbols that has
-    // been loaded from extensions exists.
-    require: undefined,
+    // The list of symbols that are exported by bundles; the keys are the names
+    // of bundles and the objects are the symbols from that object.
+    exportSymbols,
+
+    // Build a require function that looks up symbols from the list of exported
+    // symbols from other bundles that loaded before us.
+    require: modName => exportSymbols[modName] ?? {},
 
     // The logger is specific to the extension since it has the bundle name  in
     // it, so it gets set up when a bundle loads.
