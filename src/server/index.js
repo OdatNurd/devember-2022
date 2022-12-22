@@ -52,17 +52,30 @@ async function launchServer() {
   // A common API object that is passed to all extension code when it's loaded.
   // This is augmented in the bundle loader to provide the the bundle specific
   // portions of the API, such as a
-  const api = {
-    // These fields are not global; they're specific to each bundle that has an
-    // extension module in it. When such a bundle is loaded, the API that it
-    // gets passed will have these values swapped out for the correct ones.
+  const omphalos = {
+    // This is installed at bundle load time, when the list of symbols that has
+    // been loaded from extensions exists.
+    require: undefined,
+
+    // The logger is specific to the extension since it has the bundle name  in
+    // it, so it gets set up when a bundle loads.
     log: undefined,
-    bundleInfo: undefined,
+
+    // The bundle configuration is specific to the bundle and is inserted when
+    // a bundle is loaded.
+    bundleConfig: undefined,
+
+    // Application configuration
+    appConfig: config.getProperties(),
+
+    // sendMessage
+    // sendMessageToBundle
+    // broadcastMessage
   }
 
   // Discover and load all bundles; we get a list of routers that serve files
   // for any that have any; apply them all.
-  const { bundles, routers } = await loadBundles(api, manifest);
+  const { bundles, routers } = await loadBundles(omphalos, manifest);
   routers.forEach(router => app.use(router));
 
   /* Inject the list of bundles into request objects so that our API has access

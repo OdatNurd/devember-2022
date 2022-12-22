@@ -10,7 +10,8 @@ export const symbols = {}
  * When the bundle loads, this function gets called to do final initialization
  * that might be needed. */
 export function main(omphalos) {
-    omphalos.log.info(`I am the extension entry point for the bundle ${omphalos.bundleInfo.name}`);
+    omphalos.log.info(`I am the extension entry point for the bundle ${omphalos.bundleConfig.name}`);
+    omphalos.log.info(`the configured log timestamp format is ${omphalos.appConfig.logging.timestamp}`)
 
     // Add a simple export; we don't need to do this here, but it lets us
     // capture the omphalos object for logging.
