@@ -72,6 +72,9 @@ export function setupSocketIO(io) {
     // If bundle is set, the event will be broadcast to that specific bundle;
     // otherwise the message is broadcast to all assets in all bundles.
     // The event name and data can be anything you like.
+    //
+    // TODO: Extensions don't have sockets, so this won't message them; we need
+    //       to raise a local event for them directly.
     socket.on('message', data => {
       log.debug(`incoming message: ${JSON.stringify(data)}`);
 

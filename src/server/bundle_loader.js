@@ -242,7 +242,12 @@ async function loadBundleExtension(omphalos, manifest, bundleName) {
     ...omphalos,
 
     log: logger(bundleName),
-    bundleConfig: structuredClone(manifest)
+    bundleConfig: structuredClone(manifest),
+
+    // Directs a message to all listeners in the current bundle;
+    // TODO: Extensions don't have sockets, so this won't message them; we need
+    //       to raise a local event for them directly.
+    sendMessage: (event, data) => omphalos.sendMessageToBundle(bundleName, event, data),
   }
 
   // Invoke the entrypoint to initialize the module

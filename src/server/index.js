@@ -31,6 +31,56 @@ const log = logger('core');
 // =============================================================================
 
 
+/* Construct a server side omphalos API object, which is passed to the lifecycle
+ * main entry point of all bundles to give them access to the application.
+ *
+ * This fills out most of the API structure; some items are per bundle and
+ * require a bundle to load, so they are stubbed out here as placeholders before
+ * return as a reminder of the contract. */
+function makeTemplateAPIObject(io) {
+  const exportSymbols = {};
+  return {
+    // The list of symbols that are exported by bundles; the keys are the names
+    // of bundles and the objects are the symbols from that object.
+    exportSymbols,
+
+    // The global socket.io context.
+    socketIO: io,
+
+    // Build a require function that looks up symbols from the list of exported
+    // symbols from other bundles that loaded before us.
+    require: modName => exportSymbols[modName] ?? {},
+
+    // The logger is specific to the extension since it has the bundle name  in
+    // it, so it gets set up when a bundle loads.
+    log: undefined,
+
+    // The bundle configuration is specific to the bundle and is inserted when
+    // a bundle is loaded.
+    bundleConfig: undefined,
+
+    // Application configuration
+    appConfig: config.getProperties(),
+
+    // Directs a message to all listeners in a specific bundle;
+    // TODO: Extensions don't have sockets, so this won't message them; we need
+    //       to raise a local event for them directly.
+    sendMessageToBundle: (bundle, event, data) => io.to(bundle).emit('message', { event, data }),
+
+    // Directs a message to every listener in every bundle.
+    // TODO: Extensions don't have sockets, so this won't message them; we need
+    //       to raise a local event for them directly.
+    broadcastMessage: (event, data) => io.emit('message', { event, data }),
+
+    // Sending a message to only the current bundle requires that we know the
+    // current bundle, which is not known until the bundle actually loads.
+    sendMessage: undefined,
+  }
+}
+
+// =============================================================================
+
+
 /* Try to load an existing token from the database, and if we find one, use it
  * to set up the database. */
 async function launchServer() {
@@ -48,51 +98,6 @@ async function launchServer() {
   const app = express();
   app.use(express.json());
   app.use(compression());
-
-  // A common API object that is passed to all extension code when it's loaded.
-  // This is augmented in the bundle loader to provide the the bundle specific
-  // portions of the API, such as a
-  const exportSymbols = {};
-  const omphalos = {
-    // The list of symbols that are exported by bundles; the keys are the names
-    // of bundles and the objects are the symbols from that object.
-    exportSymbols,
-
-    // Build a require function that looks up symbols from the list of exported
-    // symbols from other bundles that loaded before us.
-    require: modName => exportSymbols[modName] ?? {},
-
-    // The logger is specific to the extension since it has the bundle name  in
-    // it, so it gets set up when a bundle loads.
-    log: undefined,
-
-    // The bundle configuration is specific to the bundle and is inserted when
-    // a bundle is loaded.
-    bundleConfig: undefined,
-
-    // Application configuration
-    appConfig: config.getProperties(),
-
-    // sendMessage
-    // sendMessageToBundle
-    // broadcastMessage
-  }
-
-  // Discover and load all bundles; we get a list of routers that serve files
-  // for any that have any; apply them all.
-  const { bundles, routers } = await loadBundles(omphalos, manifest);
-  routers.forEach(router => app.use(router));
-
-  /* Inject the list of bundles into request objects so that our API has access
-   * to them. */
-  app.use((req, res, next) => {
-    req.bundles = bundles;
-    next()
-  });
-
-  // Use the file router to set up the routes for the back end services that
-  // we expose to the UI.
-  app.use(await fileRoutes("src/server/routes"));
 
   // Set up some middleware that will serve static files out of the static
   // folder so that we don't have to inline the pages in code.
@@ -131,6 +136,27 @@ async function launchServer() {
 
   // Initialize all of the websocket related code.
   setupSocketIO(io);
+
+  // Get the template API object that we will pass to extension code; it will
+  // get filled out by the module loader.
+  const omphalos = makeTemplateAPIObject(io);
+
+  // Discover and load all bundles; we get a list of routers that serve files
+  // for any that have any; apply them all.
+  const { bundles, routers } = await loadBundles(omphalos, manifest);
+  routers.forEach(router => app.use(router));
+
+  // Inject the list of bundles into requests; this has to happen before we
+  // set up the file routes, since they rely on this information.
+  app.use((req, res, next) => {
+    req.bundles = bundles;
+    next()
+  });
+
+  // Use the file router to set up the routes for the back end services that
+  // we expose to the UI; this requires that the list of bundles has been added
+  // to requests via middleware.
+  app.use(await fileRoutes("src/server/routes"));
 
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');
