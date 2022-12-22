@@ -1,5 +1,5 @@
 import { getClientSocket, sendMsg } from '#api/socket';
-
+import { format } from 'fecha';
 
 // =============================================================================
 
@@ -18,8 +18,17 @@ export let bundleInfo = {};
  * info above, but is specific to the asset for which the API initalized. */
 export let assetConfig = {};
 
+/* The log object; this needs to be initialized when the API is initialized
+ * because it requires the name of the asset. */
+export let log = {};
+
 /* The websocket socket that we use to talk to the server. */
 export let socket = undefined;
+
+/* This sets the log levels that we support, in the order of their severity.
+ * The order is important since a given level will log itself and everything
+ * before it. */
+const levels = ['error', 'warn', 'info', 'debug', 'silly'];
 
 
 // =============================================================================
@@ -47,11 +56,22 @@ export function __init_api(manifest, asset, config) {
   // Set up our backchannel communications.
   socket = getClientSocket();
 
+  // Loop over all levels and set up a logger for all of them; loggers at a
+  // level higher than the configured level are stubs.
+  const timefmt = appConfig.logging.timestamp;
+  levels.forEach(level => {
+    if (appConfig.logging.console && levels.indexOf(level) <= levels.indexOf(appConfig.logging.level)) {
+      log[level] = (msg) => console.log(`${format(new Date(), timefmt)} [${level}] ${asset.name}: ${msg}`)
+    } else {
+      log[level] = () => {}
+    }
+  });
+
   // When our socket connects, we need to announce ourselves to the server to
   // join the communications channel that is associated with our bundle, so that
   // events can be directed to us.
   socket.on('connect', () => {
-    console.log(`connection for ${asset.name}:${manifest.name} established on ${socket.id}`);
+    log.debug(`connection for ${asset.name}:${manifest.name} established on ${socket.id}`);
 
     // As soon as we connect, send a message to tell the server to join us to
     // events transmitted to our bundle.
@@ -60,7 +80,7 @@ export function __init_api(manifest, asset, config) {
 
   // Display any messages that we get.
   socket.on('message', data => {
-    console.log(`event: ${data.event}, payload: ${JSON.stringify(data.data)}`)
+    log.debug(`event: ${data.event}, payload: ${JSON.stringify(data.data)}`)
   });
 }
 

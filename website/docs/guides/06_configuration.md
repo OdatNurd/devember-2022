@@ -41,6 +41,16 @@ A list of bundle ***names*** that should not be loaded if they are seen.
 The options here control logging in the application; when it happens and where
 it gets sent.
 
+:::warning A transport is needed!
+
+When configuring logging, you can choose to send logs either to the console, to
+a log file, or both. You should always configure at least one of the two; if
+you don't want to log to the console, log to a file.
+
+Diagnosing errors should they happen will be much easier.
+
+:::
+
 
 ### level
 
