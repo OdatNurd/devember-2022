@@ -6,6 +6,13 @@ title: require
 function require(bundlename)
 ```
 
+:::warning Server only
+
+This item is only present in the API object given to an `extension`; it is
+not available in `panels` and `graphics`.
+
+:::
+
 A function that can be used to load symbols from other bundles; these symbols
 come from the list of explicitly exported symbols for sharing from the bundle.
 
