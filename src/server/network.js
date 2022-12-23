@@ -53,10 +53,17 @@ export function setupSocketIO(io) {
     // We implement our own "join" message which the asset that is talking to us
     // will invoke to associate itself with a private communications channel.
     // This is what allows bundle specific events to be directed to only those
-    // things that are in that bundle.
+    // things that care about that bundle.
     socket.on("join", bundle => {
-      log.debug(`socket is associated with bundle '${bundle}': ${socket.id}`);
+      log.debug(`socket is joining '${bundle}': ${socket.id}`);
       socket.join(bundle);
+    });
+
+    // The inverse of the join message; an asset can stop listening for the
+    // events sent to a specific bundle.
+    socket.on("leave", bundle => {
+      log.debug(`socket is leaving '${bundle}': ${socket.id}`);
+      socket.leave(bundle);
     });
 
     // Handle an incoming message from the remote end; these are in a very
@@ -80,8 +87,7 @@ export function setupSocketIO(io) {
 
       const target = (data.bundle !== undefined) ? socket.to(data.bundle) : socket.broadcast;
 
-      log.debug(`emiting '${data.event}'`);
-      target.emit('message', { event: data.event, data: data.data });
+      target.emit('message', { bundle: data.bundle, event: data.event, data: data.data });
     })
   });
 }
