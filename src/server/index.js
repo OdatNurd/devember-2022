@@ -1,14 +1,16 @@
 import { config } from '#core/config';
 import { logger } from '#core/logger';
 
+import { assert } from '#api/assert';
+
 import { loadBundles } from '#core/bundle_loader';
 import { setupSocketIO, dispatchMessageEvent } from '#core/network';
-import { resolve } from 'path';
 
 import fileRoutes from '@labyrinthos/file-routes/express';
 
 import { Server } from 'socket.io';
 
+import { resolve } from 'path';
 import jetpack from 'fs-jetpack'
 import express from 'express';
 import compression from 'compression';
@@ -49,7 +51,10 @@ function makeTemplateAPIObject(io) {
 
     // Build a require function that looks up symbols from the list of exported
     // symbols from other bundles that loaded before us.
-    require: modName => exportSymbols[modName] ?? {},
+    require: modName => {
+      assert(modName !== undefined, 'module name not specified');
+      return exportSymbols[modName] ?? {}
+    },
 
     // The logger is specific to the extension since it has the bundle name  in
     // it, so it gets set up when a bundle loads.
@@ -64,14 +69,11 @@ function makeTemplateAPIObject(io) {
 
     // Directs a message to all listeners in a specific bundle;
     sendMessageToBundle: (bundle, event, data) => {
+      assert(bundle !== undefined, 'valid bundle not specified');
+      assert(event !== undefined, 'message not specified');
+
       io.to(bundle).emit('message', { bundle, event, data });
       dispatchMessageEvent(bundle, event, data);
-    },
-
-    // Directs a message to every listener in every bundle.
-    broadcastMessage: (event, data) => {
-      io.emit('message', { event, data });
-      dispatchMessageEvent(undefined, event, data);
     },
 
     // Sending a message to only the current bundle requires that we know the

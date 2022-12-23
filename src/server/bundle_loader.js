@@ -1,6 +1,8 @@
 import { config } from '#core/config';
 import { logger } from '#core/logger';
 
+import { assert } from '#api/assert';
+
 import { listenFor } from '#core/network';
 
 import { discoverBundles, getBundleLoadOrder } from '#core/bundle_resolver';
@@ -249,10 +251,16 @@ async function loadBundleExtension(omphalos, manifest, bundleName) {
     // Directs a message to all listeners in the current bundle;
     sendMessage: (event, data) => omphalos.sendMessageToBundle(bundleName, event, data),
 
+    // The exposed listenFor needs to do error checking and infer missing
+    // bundles; the call into the network code assumes that this has been done
+    // and just implements it.
     listenFor: (event, bundle, listener) => {
-      if (listener === undefined && bundle === undefined) {
-        throw new Error('no event listener callback supplied');
-      }
+      assert(event !== undefined, 'message not specified');
+
+      // If there is no listener, the bundle argument is actually the listener and
+      // the bundle is inferred; hence we need at least one of the two set or the
+      // call is missing too many arguments.
+      assert(bundle !== undefined || listener !== undefined, 'no event listener callback supplied');
 
       // Second argument is optional but listener is required; if the call signature
       // has only two arguments, infer the bundle and use it as the listener.

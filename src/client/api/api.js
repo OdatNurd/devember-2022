@@ -1,4 +1,5 @@
 import { getClientSocket, sendMsg } from '#api/socket';
+import { assert } from '#api/assert';
 import { format } from 'fecha';
 
 import EventBridge from '@axel669/event-bridge';
@@ -92,9 +93,7 @@ function setupLogger(config, name) {
  * if it is called when the API is already initialized. */
 export function __init_api(manifest, asset, config) {
   // Guard against repeated calls; the socket is the fastest way to check.
-  if (socket !== undefined) {
-    throw new Error('omphalos API is already initialized');
-  }
+  assert(socket === undefined, 'omphalos API is already initialized');
 
   // Save all of the incoming information.
   bundleInfo = manifest;
@@ -119,14 +118,23 @@ export function __init_api(manifest, asset, config) {
     socket.emit("join", manifest.name);
   });
 
-  // Display any messages that we get.
+  // Dispatch incoming messages. They should have a structure of:
+  //    event: 'message'
+  //    data: {
+  //             bundle: <bundle-name-as-string>
+  //             event:  <event-name-as-string>
+  //             data:   <opaque-event-payload>
+  //          }
   socket.on('message', data => {
-    const bundle = data.bundle || '*';
+    // Log first so if an assertion fails, we can see the full content first.
+    log.silly(`incoming: bundle: ${data.bundle}, event: ${data.event}, payload: ${JSON.stringify(data.data)}`)
 
-    log.silly(`incoming: bundle: ${bundle}, event: ${data.event}, payload: ${JSON.stringify(data.data)}`)
-    log.silly(`emit: ${data.event}.${bundle}`)
+    assert(data.bundle !== undefined, 'incoming message contains no bundle');
+    assert(data.event !== undefined, 'incoming message has no message name');
 
-    bridge.emit(`${data.event}.${bundle}`, data.data);
+    // Raise the event
+    log.silly(`emitting event: ${data.event}.${data.bundle}`)
+    bridge.emit(`${data.event}.${data.bundle}`, data.data);
   });
 }
 
@@ -138,6 +146,9 @@ export function __init_api(manifest, asset, config) {
  * sent to all members of that bundle except the sender, which presumably does
  * not need to get a message to itself since it already knows the content. */
 export function sendMessageToBundle(bundle, event, data) {
+  assert(bundle !== undefined, 'valid bundle not specified');
+  assert(event !== undefined, 'message not specified');
+
   socket.emit('message', { bundle, event, data });
 }
 
@@ -148,17 +159,9 @@ export function sendMessageToBundle(bundle, event, data) {
 /* Transmit an event to all listeners in the current bundle. The event will get
  * sent to all members of the bundle except the sender. */
 export function sendMessage(event, data) {
+  assert(event !== undefined, 'message not specified');
+
   sendMessageToBundle(bundleInfo.name, event, data);
-}
-
-
-// =============================================================================
-
-
-/* Transmit an event to all listeners in all bundles. The event will not get
- * sent to the sender. */
-export function broadcastMessage(event, data) {
-  sendMessageToBundle(undefined, event, data);
 }
 
 
@@ -175,9 +178,12 @@ export function broadcastMessage(event, data) {
  * The return value is a function that you can use to remove the listener if
  * you no longer require it. */
 export function listenFor(event, bundle, listener) {
-  if (listener === undefined && bundle === undefined) {
-    throw new Error('no event listener callback supplied');
-  }
+  assert(event !== undefined, 'message not specified');
+
+  // If there is no listener, the bundle argument is actually the listener and
+  // the bundle is inferred; hence we need at least one of the two set or the
+  // call is missing too many arguments.
+  assert(bundle !== undefined || listener !== undefined, 'no event listener callback supplied');
 
   // Second argument is optional but listener is required; if the call signature
   // has only two arguments, infer the bundle and use it as the listener.
@@ -189,36 +195,31 @@ export function listenFor(event, bundle, listener) {
   // Count this as an event listened for in this bundle.
   listens[bundle] = (listens[bundle] === undefined) ? 1 : listens[bundle] + 1;
 
-  // If the target bundle isn't ours and the join count on it is 1, we need to
-  // join
+  // If this is not our bundle and this is the first listen on it, we need to
+  // join that bundle's messaging group.
   if (bundle !== bundleInfo.name && listens[bundle] === 1) {
-    log.debug(`joining ${bundle} due to a listen on that bundle since that is not our bundle`);
+    log.debug(`joining ${bundle}; listening for ${event} outside our bundle`);
     socket.emit("join", bundle);
   }
 
-  // Listen for the event so it can trigger the listener, and capture the
-  // function that will remove the listen.
+  // Listen for the event; the return is the function to remove the listener.
+  log.silly(`listening for event: ${event}.${bundle}`);
   const unlisten = bridge.on(`${event}.${bundle}`, (event) => listener(event.data));
 
-  log.silly(`listening for event: ${event}.${bundle}`);
-
-  // Return a wrapped function that will unlisten and also potentially remove a
-  // listen on a bundle if it is no longer needed. This has a guard so that it
-  // does not allow you to unlisten more than once.
+  // When removing the listener, update the listen count and possibly leave a
+  // bundle's messaging group if we no longer need it.
   let unlistened = false;
   return () => {
-    if (unlistened === true) {
-      throw new Error('cannot unlisten more than once')
-    }
+    assert(unlistened === false, 'cannot remove listener more than once');
 
     unlisten();
     unlistened = true;
 
-    // Drop the count. If it's 0 and this is not our bundle, then we can
-    // leave this bundle's event stream.
+    // If this is not our bundle and this was our last listen, we can leave the
+    // messaging group now.
     listens[bundle]--;
     if (bundle !== bundleInfo.name && listens[bundle] === 0) {
-      log.debug(`leaving ${bundle}; not our bundle and there are no remaining listeners`);
+      log.debug(`leaving ${bundle}; no remaining events outside our bundle`);
       socket.emit("leave", bundle);
     }
   }

@@ -1,5 +1,7 @@
 import { logger } from '#core/logger';
 
+import { assert } from '#api/assert';
+
 import EventBridge from '@axel669/event-bridge';
 
 
@@ -48,27 +50,24 @@ export function setupSocketIO(io) {
   // connections. This sets up the socket specific handlers that allow us to
   // manage our communications.
   io.on('connection', socket => {
-    log.debug(`incoming connection for ${socket.id}`);
+    log.silly(`connection: ${socket.id}`);
 
     // Handle disconnects; for graphics this needs to update state that is used
     // in the UI so that the graphic display can indicate connection status.
     socket.on('disconnect', () => {
-      log.debug(`socket is disconnecting: ${socket.id}`)
+      log.silly(`disconnection: ${socket.id}`)
     });
 
-    // We implement our own "join" message which the asset that is talking to us
-    // will invoke to associate itself with a private communications channel.
-    // This is what allows bundle specific events to be directed to only those
-    // things that care about that bundle.
+    // Our messaging system from client to client comes through us and directs
+    // traffic at specific bundles. To that end clients need to join and leave
+    // the transmission groups of messages as they deem neccessary.
     socket.on("join", bundle => {
-      log.debug(`socket is joining '${bundle}': ${socket.id}`);
+      log.debug(`socket joining '${bundle}': ${socket.id}`);
       socket.join(bundle);
     });
 
-    // The inverse of the join message; an asset can stop listening for the
-    // events sent to a specific bundle.
     socket.on("leave", bundle => {
-      log.debug(`socket is leaving '${bundle}': ${socket.id}`);
+      log.debug(`socket leaving '${bundle}': ${socket.id}`);
       socket.leave(bundle);
     });
 
@@ -82,16 +81,19 @@ export function setupSocketIO(io) {
     //                   data: '',
     //               }
     //
-    // If bundle is set, the event will be broadcast to that specific bundle;
-    // otherwise the message is broadcast to all assets in all bundles.
-    // The event name and data can be anything you like.
-    socket.on('message', data => {
-      log.debug(`incoming message: ${JSON.stringify(data)}`);
+    // Messages get sent to the specific bundle provided. The event name is
+    // required and is the actual message being sent (which is defined at the
+    // user level); the data payload is optional.
+    socket.on('message', msgData => {
+      log.silly(`incoming message: ${JSON.stringify(msgData)}`);
 
-      const target = (data.bundle !== undefined) ? socket.to(data.bundle) : socket.broadcast;
+      const { bundle, event, data } = msgData;
 
-      target.emit('message', { bundle: data.bundle, event: data.event, data: data.data });
-      dispatchMessageEvent(data.bundle, data.event, data.data);
+      assert(bundle !== undefined, 'incoming message contains no bundle');
+      assert(event !== undefined, 'incoming message has no message name');
+
+      socket.to(bundle).emit('message', { bundle, event, data });
+      dispatchMessageEvent(bundle, event, data);
     })
   });
 }
@@ -106,13 +108,9 @@ export function setupSocketIO(io) {
  * This is used to deliver messages to extension code, which don't have web
  * socket connections and thus are outside of the chain of delivery. */
 export function dispatchMessageEvent(bundle, event, data) {
-  // If no bundle was provided, wildcard it. This can happen if the message is
-  // a broadcast.
-  bundle ??= '*';
-
   log.silly(`incoming: bundle: ${bundle}, event: ${event}, payload: ${JSON.stringify(data)}`)
-  log.silly(`emit event: ${event}.${bundle}`)
 
+  log.silly(`emit event: ${event}.${bundle}`)
   bridge.emit(`${event}.${bundle}`, data);
 }
 
@@ -130,20 +128,15 @@ export function dispatchMessageEvent(bundle, event, data) {
  * As in the client API, the  return value is a function that you can use to
  * remove the listener if you no longer require it. */
 export function listenFor(event, bundle, listener) {
-  // Listen for the event so it can trigger the listener, and capture the
-  // function that will remove the listen.
+  // Listen for the event; the return is the function to remove the listener.
+  log.silly(`listening for event: ${event}.${bundle}`);
   const unlisten = bridge.on(`${event}.${bundle}`, (event) => listener(event.data));
 
-  log.silly(`listening for event: ${event}.${bundle}`);
-
-  // Return a wrapped function that will unlisten and also potentially remove a
-  // listen on a bundle if it is no longer needed. This has a guard so that it
-  // does not allow you to unlisten more than once.
+  // When removing the listener, update the listen count and possibly leave a
+  // bundle's messaging group if we no longer need it.
   let unlistened = false;
   return () => {
-    if (unlistened === true) {
-      throw new Error('cannot unlisten more than once')
-    }
+    assert(unlistened === false, 'cannot remove listener more than once');
 
     unlisten();
     unlistened = true;
