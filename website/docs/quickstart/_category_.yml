@@ -3,4 +3,4 @@ label: 'Quick Start'
 collapsed: true
 link:
   type: generated-index
-  description: A quickstart guide to Omphalos; how to install it and get up and running
+  description: Quickstart guide to getting up and running with Omphalos

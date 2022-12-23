@@ -34,6 +34,9 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
+          remarkPlugins: [
+            [require('@docusaurus/remark-plugin-npm2yarn'), {sync: true}],
+          ],
         },
 
         theme: {
@@ -69,12 +72,16 @@ const config = {
         },
         items: [
           {
-            label: 'What?',
-            to: '/name'
+            label: 'Why that name?',
+            to: 'name'
+          },
+          {
+            label: 'What is it?',
+            to: '/docs/intro'
           },
           {
             type: 'doc',
-            docId: 'intro',
+            docId: 'quickstart/installation',
             position: 'left',
             label: 'Docs',
           },
