@@ -8,5 +8,14 @@
 <body>
 In the realm of the wholly unbeleivable, this is yet a third panel whose sole
 purpose is to have a different message inside.
+
+<div id="clicker"></div>
+<script>
+    const output = document.querySelector('#clicker');
+    omphalos.listenFor('click', () => {
+        output.innerHTML = 'Why is this even here?';
+        output.style = 'border-top: 1px solid';
+    });
+</script>
 </body>
 </html>

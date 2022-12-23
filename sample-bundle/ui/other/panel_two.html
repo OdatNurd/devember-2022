@@ -9,5 +9,14 @@
 You can't possibly imagine the sense of excitement if, when we visit this URL,
 you actually see this text, which indicates that what we were trying to do
 actually works. Fingers crossed.
+
+<div id="clacker"></div>
+<script>
+    const output = document.querySelector('#clacker');
+    omphalos.listenFor('clack', () => {
+        output.innerHTML = 'Well I will be a son of a bitch...';
+        output.style = 'border-top: 1px solid';
+    });
+</script>
 </body>
 </html>

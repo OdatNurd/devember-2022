@@ -8,5 +8,11 @@
 <body>
 Of all of the panels in all of the dashboards in all of the apps, you had to
 load this file into mine.
+
+<button id="clicker">Click Me</button>
+<script>
+    const btn = document.querySelector("#clicker")
+    btn.addEventListener('click', () => omphalos.sendMessage('click'));
+</script>
 </body>
 </html>

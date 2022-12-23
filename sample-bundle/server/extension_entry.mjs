@@ -17,6 +17,13 @@ export function main(omphalos) {
     // capture the omphalos object for logging.
     symbols["exported"] = () => omphalos.log.info('I am an exported function');
 
+    // Listen for an incoming click message, and when one arrives, send out a
+    // clack.
+    omphalos.listenFor('click', () => {
+        omphalos.log.debug('*** CLICK? CLACK! ***');
+        omphalos.sendMessage('clack');
+    });
+
     // Try to import a symbol from another omphalos bundle; this will give you
     // object list of symbols from that bundle, which may be empty if that
     // bundle exports no symbols.
