@@ -25,6 +25,7 @@
     "#api/*": "./src/client/api/*.js"
   },
   "dependencies": {
+    "@axel669/event-bridge": "^1.0.2",
     "@axel669/joker": "^0.3.2",
     "@labyrinthos/file-routes": "^0.2.3",
     "compression": "^1.7.4",

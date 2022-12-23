@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@axel669/event-bridge@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@axel669/event-bridge/-/event-bridge-1.0.2.tgz#43da1537d1f7bc243dfda3928771a6aa8216e0c3"
+  integrity sha512-xTnGEjDst6xL4js5ZWsSTHPBL2E0C+umPhRKMYDuH0EaZuCLa5SJyLj5WVX9Y575D9dkEOI8F1B9qCvAWFN1XA==
+
 "@axel669/joker@^0.3.1", "@axel669/joker@^0.3.2":
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/@axel669/joker/-/joker-0.3.2.tgz#7e696776664ad78288e1e655d3b381980cef61f4"
