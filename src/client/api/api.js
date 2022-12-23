@@ -172,6 +172,8 @@ export function listenFor(event, bundle, listener) {
   // function that will remove the listen.
   const unlisten = bridge.on(`${event}.${bundle}`, (event) => listener(event.data));
 
+  log.silly(`listening for event: ${event}.${bundle}`);
+
   // Return a wrapped function that will unlisten and also potentially remove a
   // listen on a bundle if it is no longer needed. This has a guard so that it
   // does not allow you to unlisten more than once.

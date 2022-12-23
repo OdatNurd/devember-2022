@@ -1,11 +1,17 @@
 import { logger } from '#core/logger';
 
+import EventBridge from '@axel669/event-bridge';
+
 
 // =============================================================================
 
 
 /* Get our subsystem logger. */
 const log = logger('network');
+
+/* The global event object that we use to dispatch and listen for all of our
+ * events. */
+const bridge = EventBridge();
 
 
 // =============================================================================
@@ -79,18 +85,67 @@ export function setupSocketIO(io) {
     // If bundle is set, the event will be broadcast to that specific bundle;
     // otherwise the message is broadcast to all assets in all bundles.
     // The event name and data can be anything you like.
-    //
-    // TODO: Extensions don't have sockets, so this won't message them; we need
-    //       to raise a local event for them directly.
     socket.on('message', data => {
       log.debug(`incoming message: ${JSON.stringify(data)}`);
 
       const target = (data.bundle !== undefined) ? socket.to(data.bundle) : socket.broadcast;
 
       target.emit('message', { bundle: data.bundle, event: data.event, data: data.data });
+      dispatchMessageEvent(data.bundle, data.event, data.data);
     })
   });
 }
 
 
 // =============================================================================
+
+
+/* This internal helper will trigger an appropriate event on the event bridge
+ * to let any listeners know that a message has arrived.
+ *
+ * This is used to deliver messages to extension code, which don't have web
+ * socket connections and thus are outside of the chain of delivery. */
+export function dispatchMessageEvent(bundle, event, data) {
+  // If no bundle was provided, wildcard it. This can happen if the message is
+  // a broadcast.
+  bundle ??= '*';
+
+  log.silly(`incoming: bundle: ${bundle}, event: ${event}, payload: ${JSON.stringify(data)}`)
+  log.silly(`emit event: ${event}.${bundle}`)
+
+  bridge.emit(`${event}.${bundle}`, data);
+}
+
+
+// =============================================================================
+
+
+/* Listen for an event and invoke the listener function provided with the
+ * payload of the event when the event happens.
+ *
+ * This is meant to be used in the actual implementation in the server side API;
+ * this one assumes that it has ALWAYS been given a bundle. The caller needs to
+ * backfill the bundle with the default at the call point where it's known.
+ *
+ * As in the client API, the  return value is a function that you can use to
+ * remove the listener if you no longer require it. */
+export function listenFor(event, bundle, listener) {
+  // Listen for the event so it can trigger the listener, and capture the
+  // function that will remove the listen.
+  const unlisten = bridge.on(`${event}.${bundle}`, (event) => listener(event.data));
+
+  log.silly(`listening for event: ${event}.${bundle}`);
+
+  // Return a wrapped function that will unlisten and also potentially remove a
+  // listen on a bundle if it is no longer needed. This has a guard so that it
+  // does not allow you to unlisten more than once.
+  let unlistened = false;
+  return () => {
+    if (unlistened === true) {
+      throw new Error('cannot unlisten more than once')
+    }
+
+    unlisten();
+    unlistened = true;
+  }
+}

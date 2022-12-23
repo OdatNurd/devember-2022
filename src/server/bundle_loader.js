@@ -1,6 +1,8 @@
 import { config } from '#core/config';
 import { logger } from '#core/logger';
 
+import { listenFor } from '#core/network';
+
 import { discoverBundles, getBundleLoadOrder } from '#core/bundle_resolver';
 import { resolve, basename } from 'path';
 
@@ -245,9 +247,22 @@ async function loadBundleExtension(omphalos, manifest, bundleName) {
     bundleConfig: structuredClone(manifest),
 
     // Directs a message to all listeners in the current bundle;
-    // TODO: Extensions don't have sockets, so this won't message them; we need
-    //       to raise a local event for them directly.
     sendMessage: (event, data) => omphalos.sendMessageToBundle(bundleName, event, data),
+
+    listenFor: (event, bundle, listener) => {
+      if (listener === undefined && bundle === undefined) {
+        throw new Error('no event listener callback supplied');
+      }
+
+      // Second argument is optional but listener is required; if the call signature
+      // has only two arguments, infer the bundle and use it as the listener.
+      if (listener === undefined) {
+        listener = bundle;
+        bundle = bundleName;
+      }
+
+      return listenFor(event, bundle, listener);
+    }
   }
 
   // Invoke the entrypoint to initialize the module

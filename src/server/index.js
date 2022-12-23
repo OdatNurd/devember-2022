@@ -2,7 +2,7 @@ import { config } from '#core/config';
 import { logger } from '#core/logger';
 
 import { loadBundles } from '#core/bundle_loader';
-import { setupSocketIO } from '#core/network';
+import { setupSocketIO, dispatchMessageEvent } from '#core/network';
 import { resolve } from 'path';
 
 import fileRoutes from '@labyrinthos/file-routes/express';
@@ -63,18 +63,25 @@ function makeTemplateAPIObject(io) {
     appConfig: config.getProperties(),
 
     // Directs a message to all listeners in a specific bundle;
-    // TODO: Extensions don't have sockets, so this won't message them; we need
-    //       to raise a local event for them directly.
-    sendMessageToBundle: (bundle, event, data) => io.to(bundle).emit('message', { event, data }),
+    sendMessageToBundle: (bundle, event, data) => {
+      io.to(bundle).emit('message', { bundle, event, data });
+      dispatchMessageEvent(bundle, event, data);
+    },
 
     // Directs a message to every listener in every bundle.
-    // TODO: Extensions don't have sockets, so this won't message them; we need
-    //       to raise a local event for them directly.
-    broadcastMessage: (event, data) => io.emit('message', { event, data }),
+    broadcastMessage: (event, data) => {
+      io.emit('message', { event, data });
+      dispatchMessageEvent(undefined, event, data);
+    },
 
     // Sending a message to only the current bundle requires that we know the
     // current bundle, which is not known until the bundle actually loads.
     sendMessage: undefined,
+
+    // Listen for incoming messages and trigger a handler. This is entirely
+    // event based on the server side because there is no socket. This requires
+    // a known bundle to infer arguments, so this is just a placeholder entry.
+    listenFor: undefined,
   }
 }
 
