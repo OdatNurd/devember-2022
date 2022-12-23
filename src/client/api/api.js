@@ -17,12 +17,8 @@ export let appConfig = {};
 export let bundleInfo = {};
 
 /* The configuration object for this asset; this is taken from the bundle
- * info above, but is specific to the asset for which the API initalized. */
+ * info above, but is specific to the asset for which the API initialized. */
 export let assetConfig = {};
-
-/* The log object; this needs to be initialized when the API is initialized
- * because it requires the name of the asset. */
-export let log = {};
 
 /* The websocket socket that we use to talk to the server. */
 export let socket = undefined;
@@ -31,6 +27,19 @@ export let socket = undefined;
  * The order is important since a given level will log itself and everything
  * before it. */
 const levels = ['error', 'warn', 'info', 'debug', 'silly'];
+
+/* Our log object. We front load it with stubs for all levels, and when the API
+ * is initialized the log initialize routine will replace some or all of the
+ * stubs with a logger that uses the asset name, depending on level and
+ * configuration. */
+export const log = {
+  'error': () => {},
+  'warn': () => {},
+  'info': () => {},
+  'debug': () => {},
+  'silly': () => {},
+};
+
 
 /* The global event object that we use to dispatch and listen for all of our
  * events. */
@@ -47,18 +56,44 @@ const listens = {};
 // =============================================================================
 
 
+/* Initialize logging based on the passed in logger configuration object and
+ * the name of the asset.
+ *
+ * This will set up any required log levels with a dedicated logger that outputs
+ * logs for the given asset. */
+function setupLogger(config, name) {
+  // Already configured if we don't want to log to the console at all.
+  if (config.console === false) {
+    return;
+  }
+
+
+  // Set up a logger from the lowest level up to and including the desired log
+  // level.
+  const timestamp = () => format(new Date(), config.timefmt);
+  for (let i = 0 ; i <= levels.indexOf(config.level) ; i++) {
+    const level = levels[i];
+
+    log[level] = msg => console.log(`${timestamp} [${level}] ${name}: ${msg}`);
+  }
+}
+
+
+// =============================================================================
+
+
 /* Initializes the Omphalos API by providing information on the given bundle,
  * asset and application configuration.
  *
  * Once the API is configured, a socket connection to the back end will be
  * established.
  *
- * This guards against repeated initializations and will throw an exception
+ * This guards against repeated initialization and will throw an exception
  * if it is called when the API is already initialized. */
 export function __init_api(manifest, asset, config) {
   // Guard against repeated calls; the socket is the fastest way to check.
   if (socket !== undefined) {
-    throw new Error('omphalos api is already initialized; cannot re-init');
+    throw new Error('omphalos API is already initialized');
   }
 
   // Save all of the incoming information.
@@ -66,19 +101,12 @@ export function __init_api(manifest, asset, config) {
   assetConfig = asset;
   appConfig = config;
 
-  // Set up our backchannel communications.
+  // Set up our back-channel communications socket; this will keep itself
+  // connected permanently.
   socket = getClientSocket();
 
-  // Loop over all levels and set up a logger for all of them; loggers at a
-  // level higher than the configured level are stubs.
-  const timefmt = appConfig.logging.timestamp;
-  levels.forEach(level => {
-    if (appConfig.logging.console && levels.indexOf(level) <= levels.indexOf(appConfig.logging.level)) {
-      log[level] = (msg) => console.log(`${format(new Date(), timefmt)} [${level}] ${asset.name}: ${msg}`)
-    } else {
-      log[level] = () => {}
-    }
-  });
+  // Set up our log handling.
+  setupLogger(appConfig.logging, asset.name);
 
   // When our socket connects, we need to announce ourselves to the server to
   // join the communications channel that is associated with our bundle, so that
