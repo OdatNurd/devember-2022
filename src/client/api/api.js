@@ -74,7 +74,7 @@ function setupLogger(config, name) {
   for (let i = 0 ; i <= levels.indexOf(config.level) ; i++) {
     const level = levels[i];
 
-    log[level] = msg => console.log(`${timestamp} [${level}] ${name}: ${msg}`);
+    log[level] = msg => console.log(`${timestamp()} [${level}] ${name}: ${msg}`);
   }
 }
 
