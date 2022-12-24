@@ -22,6 +22,7 @@ export function main(omphalos) {
     omphalos.listenFor('click', () => {
         omphalos.log.debug('*** CLICK? CLACK! ***');
         omphalos.sendMessage('clack');
+        omphalos.toast('Server received a click message; sent clack', 'info', 3);
     });
 
     // Try to import a symbol from another omphalos bundle; this will give you

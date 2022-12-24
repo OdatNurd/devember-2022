@@ -10,9 +10,24 @@ Of all of the panels in all of the dashboards in all of the apps, you had to
 load this file into mine.
 
 <button id="clicker">Click Me</button>
+
+<hr />
+<button id="message">Message Toast</button>
+<button id="info">Info Toast</button>
+<button id="warning">Warning Toast</button>
+<button id="success">Success Toast</button>
+<button id="error">Error Toast</button>
+<hr />
+
+
 <script>
     const btn = document.querySelector("#clicker")
     btn.addEventListener('click', () => omphalos.sendMessage('click'));
+
+    ['message', 'info', 'warning', 'success', 'error'].forEach(level => {
+        const element = document.querySelector(`#${level}`);
+        element.addEventListener('click', () => omphalos.toast(`This toast is of level: '${level}'`, level, 1.5));
+    })
 </script>
 </body>
 </html>

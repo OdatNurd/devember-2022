@@ -4,6 +4,7 @@ import { format } from 'fecha';
 
 import EventBridge from '@axel669/event-bridge';
 
+
 // =============================================================================
 
 
@@ -223,3 +224,29 @@ export function listenFor(event, bundle, listener) {
     }
   }
 }
+
+
+// =============================================================================
+
+
+/* Dispatch a request to the dashboard to display a toast message. The message
+ * text will be displayed in a box that is colored and has an icon that both
+ * relate to the level used.
+ *
+ * If not provided, level will default to 'message'.
+ *
+ * Optionally, a timeout value in seconds can be given; the toast will remain
+ * visible for that amount of time. */
+export function toast(msg, level, timeout_secs) {
+  const levels = ['message', 'info', 'warning', 'success', 'error'];
+
+  level ||= 'message';
+
+  assert(msg !== undefined, 'no toast message text given');
+  assert(levels.indexOf(level) !== -1, `unknown toast level '${level}'`);
+
+  sendMessageToBundle('toast', '__omphalos_system__', { toast: msg, level, timeout: timeout_secs * 1000 });
+}
+
+
+// =============================================================================

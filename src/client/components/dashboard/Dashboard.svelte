@@ -1,4 +1,6 @@
 <script>
+  import { toast } from '$lib/toast.js'
+
   import DashboardPanel from './DashboardPanel.svelte';
 
   // The grid stack instance; this gets created only after all of the panels
@@ -9,6 +11,10 @@
   // When this is true, all of the panel items are blocked from taking any
   // mouse interaction.
   let blocked = false;
+
+  // Listen for incoming toast requests from the system and dispatch them. This
+  // relies on the fact that the payload is verified on the other end.
+  omphalos.listenFor('toast', data => toast[data.level](data.toast, data.timeout));
 
   const fetchUIPanels = async () => {
     const res = await fetch('/api/v1/panels');

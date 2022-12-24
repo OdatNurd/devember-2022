@@ -84,6 +84,25 @@ function makeTemplateAPIObject(io) {
     // event based on the server side because there is no socket. This requires
     // a known bundle to infer arguments, so this is just a placeholder entry.
     listenFor: undefined,
+
+    // Trigger a toast message.
+    toast: (msg, level, timeout_secs) => {
+      const levels = ['message', 'info', 'warning', 'success', 'error'];
+
+      level ||= 'message';
+
+      assert(msg !== undefined, 'no toast message text given');
+      assert(levels.indexOf(level) !== -1, `unknown toast level '${level}'`);
+
+      // Direct the message to the front end; we don't need to use the full
+      // sender here since nothing on the server side can do anything about a
+      // toast anyway.
+      io.to('__omphalos_system__').emit('message', {
+        bundle: '__omphalos_system__',
+        event: 'toast', data:
+        { toast: msg, level, timeout: timeout_secs * 1000 }
+      });
+    }
   }
 }
 
