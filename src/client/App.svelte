@@ -1,8 +1,9 @@
 <script>
-  import { NavBar, Dashboard } from '$components';
+  import { NavBar, Toaster, Dashboard } from '$components';
 </script>
 
 <div class="flex flex-col h-screen">
+  <Toaster />
   <NavBar />
 
   <div class="flex flex-1 w-full overflow-hidden p-0 m-0">

@@ -1,6 +1,10 @@
 <script>
+  import { toast } from '$lib/toast.js';
+
   import Icon from '../Icon.svelte';
   import Logo from '../Logo.svelte';
+
+  const notImplemented = () => toast.warning("This is not implemented yet!");
 </script>
 
 
@@ -18,13 +22,13 @@
 
   <div class="navbar-end">
     <div class="tooltip tooltip-bottom" data-tip="Graphics">
-      <button class="btn btn-circle" aria-label="Open Graphics Page">
+      <button on:click={notImplemented} class="btn btn-circle" aria-label="Open Graphics Page">
         <Icon name={'layer-group'} size="1.5rem" />
       </button>
     </div>
 
     <div class="tooltip tooltip-bottom" data-tip="Mixer">
-      <button class="btn btn-circle" aria-label="Open Mixer Page">
+      <button on:click={notImplemented} class="btn btn-circle" aria-label="Open Mixer Page">
         <Icon name={'headphones-simple'} size="1.5rem" />
       </button>
     </div>
@@ -36,7 +40,7 @@
     </div>
 
     <div class="tooltip tooltip-left" data-tip="Settings">
-      <button class="btn btn-circle" aria-label="Open Settings Page">
+      <button on:click={notImplemented} class="btn btn-circle" aria-label="Open Settings Page">
         <Icon name={'gear'} size="1.5rem" />
       </button>
     </div>
