@@ -36,17 +36,3 @@ export function getClientSocket() {
 
 
 // =============================================================================
-
-
-/* Transmit a message to the remote end, optionally directing the message to a
- * specific room. If the room is not specified, the message will be transmitted
- * globally. */
-export function sendMsg(socket, msg, room=undefined) {
-  // Transmit a message away; the event is always 'msg'; the room is optional
-  // and the message will go either to there or to everyone, depending. The
-  // msg is the actual payload of the message.
-  socket.emit('msg', { room, msg } );
-}
-
-
-// =============================================================================

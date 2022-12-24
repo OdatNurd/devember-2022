@@ -1,4 +1,4 @@
-import { getClientSocket, sendMsg } from '#api/socket';
+import { getClientSocket } from '#api/socket';
 import { assert } from '#api/assert';
 import { format } from 'fecha';
 
@@ -67,7 +67,6 @@ function setupLogger(config, name) {
   if (config.console === false) {
     return;
   }
-
 
   // Set up a logger from the lowest level up to and including the desired log
   // level.
