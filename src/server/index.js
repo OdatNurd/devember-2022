@@ -68,7 +68,7 @@ function makeTemplateAPIObject(io) {
     appConfig: config.getProperties(),
 
     // Directs a message to all listeners in a specific bundle;
-    sendMessageToBundle: (bundle, event, data) => {
+    sendMessageToBundle: (event, bundle, data) => {
       assert(bundle !== undefined, 'valid bundle not specified');
       assert(event !== undefined, 'message not specified');
 

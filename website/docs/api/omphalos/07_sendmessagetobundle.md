@@ -3,7 +3,7 @@ title: sendMessageToBundle
 ---
 
 ```js
-function sendMessageToBundle(bundle, event, data)
+function sendMessageToBundle(event, bundle, data)
 ```
 
 :::info server side use

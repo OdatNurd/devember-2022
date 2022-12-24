@@ -144,7 +144,7 @@ export function __init_api(manifest, asset, config) {
 /* Transmit an event to all listeners in a specific bundle. The event will get
  * sent to all members of that bundle except the sender, which presumably does
  * not need to get a message to itself since it already knows the content. */
-export function sendMessageToBundle(bundle, event, data) {
+export function sendMessageToBundle(event, bundle, data) {
   assert(bundle !== undefined, 'valid bundle not specified');
   assert(event !== undefined, 'message not specified');
 
@@ -160,7 +160,7 @@ export function sendMessageToBundle(bundle, event, data) {
 export function sendMessage(event, data) {
   assert(event !== undefined, 'message not specified');
 
-  sendMessageToBundle(bundleInfo.name, event, data);
+  sendMessageToBundle(event, bundleInfo.name, data);
 }
 
 

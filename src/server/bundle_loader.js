@@ -249,7 +249,7 @@ async function loadBundleExtension(omphalos, manifest, bundleName) {
     bundleConfig: structuredClone(manifest),
 
     // Directs a message to all listeners in the current bundle;
-    sendMessage: (event, data) => omphalos.sendMessageToBundle(bundleName, event, data),
+    sendMessage: (event, data) => omphalos.sendMessageToBundle(event, bundleName, data),
 
     // The exposed listenFor needs to do error checking and infer missing
     // bundles; the call into the network code assumes that this has been done
