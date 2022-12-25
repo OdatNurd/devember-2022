@@ -4,6 +4,8 @@
 
   import Icon from '../Icon.svelte';
   import Logo from '../Logo.svelte';
+
+  export let workspaces;
 </script>
 
 
@@ -11,7 +13,9 @@
   <div class="navbar-start">
     <Logo size={36} />
     <div class="tabs ml-4">
-      <a href="/" use:link class="tab tab-lg tab-bordered tab-active">Workspace</a>
+      {#each workspaces as workspace (name)}
+        <a href="/dashboard/{workspace.slug}" use:link class="tab tab-lg tab-bordered">{workspace.name}</a>
+      {/each}
     </div>
   </div>
 
