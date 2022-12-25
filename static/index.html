@@ -3,13 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Omphalos - Adding Oomph to your Streams</title>
+    <title>Omphalos Dashboard - v0.0.1</title>
     <link href="/fontawesome/css/all.css" rel="stylesheet">
     <link href="/gridstack/gridstack.min.css" rel="stylesheet">
     <link rel="shortcut icon" type="image/jpg" href="/favicon.png">
     <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
     <script type="text/javascript">
+      // TODO: Populate this via code, and include in that the title from above.
+      //       Since we need to do this with assets as well, try to come up with
+      //       a generic enough scheme to be used for all files.
       omphalos.__init_api({ name: "__omphalos_system__" }, { name: 'system-dashboard' } , {
         logging: {
           console: true,

@@ -33,6 +33,40 @@ const log = logger('core');
 // =============================================================================
 
 
+/* Send the static file given in response to the request; this is used solely
+ * for client side routing reasons; it's needed for when the user hard reloads
+ * a route on the client end, since from our perspective the whole site is a
+ * single page.
+ *
+ * This should be assigned to a wildcard route as the last route so that all
+ * requests fall back to it. */
+function fullfillSPARequest(req, res) {
+  const log = logger('express');
+
+  log.debug(`SPA reload: ${req.url}`);
+
+  const options = {
+    root: resolve(config.get('baseDir'), 'www'),
+    dotfiles: 'deny',
+    headers: {
+      'x-timestamp': Date.now(),
+      'x-sent': true,
+      'x-item-filename': "index.html"
+    }
+  };
+
+  res.sendFile("index.html", options, err => {
+    if (err) {
+      log.error(`SPA request error: ${err}`);
+      res.status(404).send('error sending file');
+    }
+  });
+}
+
+
+// =============================================================================
+
+
 /* Construct a server side omphalos API object, which is passed to the lifecycle
  * main entry point of all bundles to give them access to the application.
  *
@@ -185,6 +219,9 @@ async function launchServer() {
   // we expose to the UI; this requires that the list of bundles has been added
   // to requests via middleware.
   app.use(await fileRoutes("src/server/routes"));
+
+  // Handle SPA requests for all unknown requests.
+  app.get("/*", (req, res) => fullfillSPARequest(req, res,));
 
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');

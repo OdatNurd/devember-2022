@@ -1,10 +1,9 @@
 <script>
   import { toast } from '$lib/toast.js';
+  import { link } from 'svelte-navigator';
 
   import Icon from '../Icon.svelte';
   import Logo from '../Logo.svelte';
-
-  const notImplemented = () => toast.warning("This is not implemented yet!");
 </script>
 
 
@@ -12,7 +11,7 @@
   <div class="navbar-start">
     <Logo size={36} />
     <div class="tabs ml-4">
-      <button class="tab tab-lg tab-bordered tab-active">Workspace</button>
+      <a href="/" use:link class="tab tab-lg tab-bordered tab-active">Workspace</a>
     </div>
   </div>
 
@@ -22,15 +21,15 @@
 
   <div class="navbar-end">
     <div class="tooltip tooltip-bottom" data-tip="Graphics">
-      <button on:click={notImplemented} class="btn btn-circle" aria-label="Open Graphics Page">
+      <a  href="/graphics" use:link class="btn btn-circle" aria-label="Open Graphics Page">
         <Icon name={'layer-group'} size="1.5rem" />
-      </button>
+      </a>
     </div>
 
     <div class="tooltip tooltip-bottom" data-tip="Mixer">
-      <button on:click={notImplemented} class="btn btn-circle" aria-label="Open Mixer Page">
+      <a href="/mixer" use:link class="btn btn-circle" aria-label="Open Mixer Page">
         <Icon name={'headphones-simple'} size="1.5rem" />
-      </button>
+      </a>
     </div>
 
     <div class="tooltip tooltip-bottom" data-tip="Docs">
@@ -40,9 +39,9 @@
     </div>
 
     <div class="tooltip tooltip-left" data-tip="Settings">
-      <button on:click={notImplemented} class="btn btn-circle" aria-label="Open Settings Page">
+      <a href="/settings" use:link class="btn btn-circle" aria-label="Open Settings Page">
         <Icon name={'gear'} size="1.5rem" />
-      </button>
+      </a>
     </div>
   </div>
 </div>
