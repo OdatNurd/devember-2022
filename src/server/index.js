@@ -161,6 +161,13 @@ async function launchServer() {
   app.use(express.json());
   app.use(compression());
 
+  // The bare top URL is the dashboard; if that is what is provided, do an
+  // immediate redirect instead of serving any content.
+  app.get("/", (req, res) => {
+    log.debug('request for site root; redirecing to dashboard');
+    res.status(302).set({ location: '/dashboard' }).send();
+  });
+
   // Set up some middleware that will serve static files out of the static
   // folder so that we don't have to inline the pages in code.
   app.use(express.static('www'));
@@ -220,8 +227,9 @@ async function launchServer() {
   // to requests via middleware.
   app.use(await fileRoutes("src/server/routes"));
 
-  // Handle SPA requests for all unknown requests.
-  app.get("/*", (req, res) => fullfillSPARequest(req, res,));
+  // The list of top level pages is a known quanity; if there is a request for
+  // one of them, serve the main page instead of an error page.
+  app.get(/^\/(mixer|settings|graphics|dashboard|dashboard\/.*)[\/]?$/u, (req, res) => fullfillSPARequest(req, res,));
 
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');
