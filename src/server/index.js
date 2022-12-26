@@ -8,6 +8,8 @@ import { setupSocketIO, dispatchMessageEvent } from '#core/network';
 
 import fileRoutes from '@labyrinthos/file-routes/express';
 
+import { sendStaticTemplate } from '#core/static';
+
 import { Server } from 'socket.io';
 
 import { resolve } from 'path';
@@ -33,34 +35,67 @@ const log = logger('core');
 // =============================================================================
 
 
-/* Send the static file given in response to the request; this is used solely
- * for client side routing reasons; it's needed for when the user hard reloads
- * a route on the client end, since from our perspective the whole site is a
- * single page.
+/* This is the error template for when we try to server up a SPA route from the
+ * main index.html file and it's not present.
  *
- * This should be assigned to a wildcard route as the last route so that all
- * requests fall back to it. */
-function fullfillSPARequest(req, res) {
-  const log = logger('express');
+ * This should never happen unless someone has done something silly externally
+ * because this file is part of the installation of the application. */
+function spaErrorPage() {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Well that is embarassing</title>
+    </head>
+    <body>
+      Unable to locate the main application file; did something go wrong during
+      application install? Please check the Omphalos logs for more detailed
+      errors.
+    </body>
+    </html>
+  `
+}
 
-  log.debug(`SPA reload: ${req.url}`);
 
-  const options = {
-    root: resolve(config.get('baseDir'), 'www'),
-    dotfiles: 'deny',
-    headers: {
-      'x-timestamp': Date.now(),
-      'x-sent': true,
-      'x-item-filename': "index.html"
-    }
+// =============================================================================
+
+
+/* This marks up the static HTML file that we serve so that it will initialize
+ * the omphalos API object for use in the top level page.
+ *
+ * This presupposes that the static file already has all of the required
+ * resources in the required location, and all we need to do is inject the
+ * script call that will initialize the API. */
+function spaTemplate(dom, version) {
+  // Create a small stub manifest to pass in for API initialization; the only
+  // part of this that is needed by the top level code is a faked up bundle
+  // name that identifies us as the system bundle.
+  const manifest = {
+    name: "__omphalos_system__",
+    version
   };
 
-  res.sendFile("index.html", options, err => {
-    if (err) {
-      log.error(`SPA request error: ${err}`);
-      res.status(404).send('error sending file');
-    }
-  });
+  // Create a fake asset entry; as above the only part of this that is needed is
+  // an asset name, which is purely informational and allows us to distinguish
+  // logs in the browser console.
+  const asset = {
+    name: "system-dashboard"
+  }
+
+  // Append the app version into the document title.
+  dom.window.document.title += ` (v${manifest.version})`;
+
+  const content = dom.window.document.createElement('content');
+  content.innerHTML = `
+    <script>
+      omphalos.__init_api(${JSON.stringify(manifest)}, ${JSON.stringify(asset)}, ${config.toString()})
+    </script>
+  `;
+
+  // Add the content children at the end of the head element.
+  dom.window.document.querySelector('head').append(...content.children);
 }
 
 
@@ -229,7 +264,10 @@ async function launchServer() {
 
   // The list of top level pages is a known quanity; if there is a request for
   // one of them, serve the main page instead of an error page.
-  app.get(/^\/(mixer|settings|graphics|dashboard|dashboard\/.*)[\/]?$/u, (req, res) => fullfillSPARequest(req, res,));
+  const spaFile = resolve(config.get('baseDir'), 'www', 'index.html')
+  const templ = dom => spaTemplate(dom, manifest.version);
+  app.get(/^\/(mixer|settings|graphics|dashboard|dashboard\/.*)[\/]?$/u,
+    (req, res) => sendStaticTemplate(req, res, spaFile, spaErrorPage, templ));
 
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');

@@ -6,10 +6,9 @@ import { assert } from '#api/assert';
 import { listenFor } from '#core/network';
 
 import { discoverBundles, getBundleLoadOrder } from '#core/bundle_resolver';
-import { resolve, basename } from 'path';
+import { resolve } from 'path';
 
-import { readFileSync } from 'fs';
-import { JSDOM } from 'jsdom';
+import { sendStaticTemplate } from '#core/static';
 
 import express from 'express';
 import jetpack from 'fs-jetpack';
@@ -35,54 +34,40 @@ export class BundleLoadError extends Error {
 // =============================================================================
 
 
-/* This function will respond to a express route request by serving the content
- * of the static file provided. The filename must be an absolute path for the
- * serve to work.
- *
- * This can be used to transmit any file, although it is primarily intended for
- * serving panel and overlay pages. */
-function serveStaticFile(req, res, assetKey, asset, manifest, staticFile) {
-  const log = logger('express');
+/* This is the error template function for when a panel or a graphic is missing;
+ * unlike the main template, this does not try to initialize the API since there
+ * is nothing in the page to access it anyway. */
+function assetError(manifest, file, assetType) {
+  const prefix = resolve(manifest.omphalos.location, '..');
+  const shortName = file.substring(prefix.length + 1);
 
-  // Log the full path for debugging reasons.
-  log.debug(`serving ${assetKey}: ${staticFile}`);
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${assetType} missing</title>
+      <link rel="stylesheet" type="text/css" href="/defaults/css/${assetType}s.css" >
+    </head>
+    <body>
+      Unable to locate ${assetType} file: <strong>${shortName}</strong>
+    </body>
+    </html>
+  `
+}
 
-  // Get the raw page content of this asset
-  let assetContent;
-  if (jetpack.exists(staticFile) === 'file') {
-    assetContent = readFileSync(staticFile, 'utf-8');
-  } else {
-    // Determine the short name for this asset; this is the internal location
-    // relative to the bundle (and including bundle name) rather than the full
-    // absolute path.
-    const prefix = resolve(manifest.omphalos.location, '..');
-    const shortName = staticFile.substring(prefix.length + 1);
 
-    // Generate a simple error page.
-    assetContent = `
-       <!DOCTYPE html>
-       <html>
-       <head>
-         <meta charset="utf-8">
-         <meta name="viewport" content="width=device-width, initial-scale=1">
-         <title>Panel Missing!</title>
-       </head>
-       <body>
-         Unable to locate panel file: <strong>${shortName}</strong>
-       </body>
-       </html>
-     `;
-  }
+// =============================================================================
 
-  // Load the raw content from the file and parse it into a DOM object
-  const dom = new JSDOM(assetContent);
 
-  // Create an element that contains the content that we want to insert into the
-  // page; this is slightly different depending on wether this is an overlay
-  // or a panel.
+/* This is the page template function for panels and graphics; this injects the
+ * code needed to allow the asset to connect to the back end and initialize its
+ * API. */
+function assetTemplate(dom, manifest, asset, assetType) {
   const content = dom.window.document.createElement('content');
   content.innerHTML = `
-    <link rel="stylesheet" type="text/css" href="/defaults/css/${assetKey}.css" >
+    <link rel="stylesheet" type="text/css" href="/defaults/css/${assetType}s.css" >
     <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
     <script>
@@ -93,9 +78,6 @@ function serveStaticFile(req, res, assetKey, asset, manifest, staticFile) {
   // Add the children of the element that we created to the start of the head
   // element in the page when we serve it.
   dom.window.document.querySelector('head').prepend(...content.children);
-
-  // Send the result back.
-  res.send(dom.serialize());
 }
 
 
@@ -122,7 +104,13 @@ function serveStaticFile(req, res, assetKey, asset, manifest, staticFile) {
  * The return value is a potential router; this will be null if there was no
  * router given and none is needed, a new router if we were given null and we
  * needed a router, or the router passed in if it existed. */
-function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
+function setupAssetRoutes(manifest, bundleName, assetType, router) {
+  // Using the asset type, determine what key in the manifest has our asset
+  // list in it, and determine where they're stored.
+  const assetKey  = assetType === 'panel' ? 'panels' : 'graphics';
+  const assetPath = assetType === 'panel' ? manifest.omphalos.panelPath : manifest.omphalos.graphicPath;
+
+  // Alias the full path to the assets we're serving.
   const fullAssetPath = resolve(manifest.omphalos.location, assetPath);
 
   log.info(`setting up routes for '${bundleName}' ${assetKey}`);
@@ -177,8 +165,12 @@ function setupAssetRoutes(manifest, bundleName, assetKey, assetPath, router) {
       continue;
     }
 
+    // Set up template handlers for expanding out the page.
+    const error = () => assetError(manifest, staticFile, assetType);
+    const templ = (dom) => assetTemplate(dom, manifest, asset, assetType);
+
     // Add in a route for it to serve this specific static file.
-    router.get(staticUrl, (req, res) => serveStaticFile(req, res, assetKey, asset, manifest, staticFile));
+    router.get(staticUrl, (req, res) => sendStaticTemplate(req, res, staticFile, error, templ));
   }
 
   // Now that we're done with the individual files, set up a route to serve the
@@ -330,8 +322,8 @@ async function loadBundle(omphalos, manifest) {
   // Set up the panel and graphic routes as needed. These don't signal an error
   // back because it's not as catastrophic if a panel or graphic is missing;
   // this could be done on purpose as development of the bundle progresses.
-  router = setupAssetRoutes(manifest, bundleName, 'panels', manifest.omphalos.panelPath, router);
-  router = setupAssetRoutes(manifest, bundleName, 'graphics', manifest.omphalos.graphicPath, router);
+  router = setupAssetRoutes(manifest, bundleName, 'panel', router);
+  router = setupAssetRoutes(manifest, bundleName, 'graphic', router);
 
   // Return the router and exported symbols back to the caller; may be null.
   return { router, symbols };
