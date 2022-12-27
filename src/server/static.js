@@ -28,8 +28,12 @@ const log = logger('static');
  *
  * If the static file presented does not exist, the errorTemplate function will
  * be called to obtain the template for the page to send. That page will be
- * sent as is and not passed through the formatter. */
-export function sendStaticTemplate(req, res, file, errorTemplate, formatter) {
+ * sent as is and not passed through the formatter.
+ *
+ * The status provided is used in the served page; normally you would not need
+ * to touch this, but in some circumstances you may want to use a non-normal
+ * status, such as 404. */
+export function sendStaticTemplate(req, res, file, errorTemplate, formatter, status=200) {
   log.debug(`serving: ${req.url} from ${file}`);
 
   // Send back the error template if the file provided does not exist.
@@ -46,7 +50,7 @@ export function sendStaticTemplate(req, res, file, errorTemplate, formatter) {
   formatter(dom);
 
   // Send the result back.
-  res.send(dom.serialize());
+  res.status(status).send(dom.serialize());
 }
 
 

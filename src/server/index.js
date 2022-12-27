@@ -269,6 +269,11 @@ async function launchServer() {
   app.get(/^\/(mixer|settings|graphics|dashboard|dashboard\/.*)[\/]?$/u,
     (req, res) => sendStaticTemplate(req, res, spaFile, spaErrorPage, templ));
 
+  // Our last route is a wildcard; if this happens, serve the page as a SPA page
+  // but use a 404 status. The client side router will display the common error
+  // page, but we still get a status that lets bundle code know they hosed it.
+  app.get('/*', (req, res) => sendStaticTemplate(req, res, spaFile, spaErrorPage, templ, 404));
+
   // Get the server to listen for incoming requests.
   const webPort = config.get('port');
   await server.listen(webPort, () => {
