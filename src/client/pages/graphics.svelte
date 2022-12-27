@@ -1,5 +1,9 @@
 <script>
-  import { Dashboard } from '$components';
+  import { Content } from '$components';
 </script>
 
-I am the list of graphics
+<Content>
+  <div class="prose md:prose-lg lg:prose-xl">
+    I am the content of the graphics page.
+  </div>
+</Content>
