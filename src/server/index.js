@@ -81,7 +81,8 @@ function spaTemplate(dom, version) {
   // an asset name, which is purely informational and allows us to distinguish
   // logs in the browser console.
   const asset = {
-    name: "system-dashboard"
+    name: "system-dashboard",
+    type: "system"
   }
 
   // Append the app version into the document title.

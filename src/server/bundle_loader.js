@@ -71,7 +71,7 @@ function assetTemplate(dom, manifest, asset, assetType) {
     <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
     <script>
-      omphalos.__init_api(${JSON.stringify(manifest)}, ${JSON.stringify(asset)}, ${config.toString()})
+      omphalos.__init_api(${JSON.stringify(manifest)}, ${JSON.stringify({ ...asset, type: assetType })}, ${config.toString()})
     </script>
   `;
 
