@@ -1,4 +1,6 @@
 <script>
+  import Icon from '../Icon.svelte';
+
   export let title = 'title goes here';
   export let content = 'content goes here';
 
@@ -50,9 +52,14 @@
                              gs-no-resize={noResize}
                              gs-no-move={noMove}
                              >
-  <div class="grid-stack-item-content">
-    <div class="grid-stack-item-title bg-primary text-primary-content p-1">{title}</div>
-    <div class="panel-content bg-neutral text-neutral-content p-0 m-0 h-full w-full relative">
+  <div class="grid-stack-item-content rounded-tl-lg rounded-br-lg border-neutral-focus border-4">
+    <div class="grid-stack-item-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
+      {title}
+      <a target="_blank" rel="nofollow noreferrer" href={`/bundles/${bundle}/panels/${content}`} class="btn btn-xs btn-circle btn-primary" aria-label="Open In New Tab">
+        <Icon name={'up-right-from-square'} size="0.75rem" />
+      </a>
+    </div>
+    <div class="panel-content bg-neutral text-neutral-content p-0 m-0 h-full w-full relative rounded-br-lg border-neutral-focus border-1">
       <iframe src={`/bundles/${bundle}/panels/${content}`} {title}> </iframe>
       <div class="blocker" class:blocked></div>
     </div>
@@ -79,6 +86,8 @@
   .grid-stack-item-title   {
     font-size: 110%;
     font-weight: bold;
+    display: grid;
+    grid-template-columns: auto min-content;
 
     cursor: move;
   }
