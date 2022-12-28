@@ -1,6 +1,8 @@
 <script>
   import { Content, Icon } from '$components';
 
+  import { toast } from '$lib/toast.js'
+
   const bundles = [
     {
       "name": "sample-bundle",
@@ -8,6 +10,7 @@
         {
           "count": 1,
           "file": "the_overlay.html",
+          "name": "graphic-one",
           "size": {
             width: 1920,
             height: 1080
@@ -21,6 +24,7 @@
         {
           "count": 0,
           "file": "missing.html",
+          "name": "missing.html",
           "size": {
             width: 1280,
             height: 720
@@ -29,6 +33,17 @@
       ]
     }
   ];
+
+  // Obtain the full URL for a graphic
+  const graphicURL = (bundle, graphic) => {
+    return `${window.location.origin}/bundles/${bundle.name}/graphics/${graphic.file}`;
+  }
+
+  // Copy the full URL for a graphic to the clipboard.
+  const copyUrl = (bundle, graphic) => {
+    navigator.clipboard.writeText(graphicURL(bundle, graphic));
+    toast.success(`Copied URL for ${graphic.name} to the clipboard!`);
+  }
 </script>
 
 <Content>
@@ -39,7 +54,7 @@
       <div class="font-bold wrapper-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
         <span class="text-xl">{bundle.name}</span>
         <div class="tooltip tooltip-bottom z-20" data-tip="Reload all graphics in this bundle">
-          <button class="btn btn-xs btn-primary" aria-label="Reload All Graphics">
+          <button class="btn btn-xs btn-primary z-0" aria-label="Reload All Graphics">
             <Icon name={'rotate-right'} size="0.75rem" />
           </button>
         </div>
@@ -55,14 +70,14 @@
             <!-- Load count, link and size -->
             <div class="flex flex-grow items-center justify-between">
               <div class="flex-none px-2">{graphic.count}</div>
-              <div class="font-bold underline flex-grow"><a target="_blank" rel="nofollow noreferrer" href="/bundles/{bundle.name}/graphics/{graphic.file}">{graphic.file}</a></div>
+              <div class="font-bold underline flex-grow"><a target="_blank" rel="nofollow noreferrer" href="{graphicURL(bundle, graphic)}">{graphic.file}</a></div>
               <h3 class="flex-none">{graphic.size.width}x{graphic.size.height}</h3>
             </div>
 
             <!-- Two buttons -->
             <div class="flex ml-2">
               <div class="tooltip tooltip-bottom z-10" data-tip="Copy URL">
-                <button class="btn btn btn-circle btn-primary ml-1" aria-label="Copy URL">
+                <button on:click={() => copyUrl(bundle, graphic)} class="btn btn btn-circle btn-primary ml-1" aria-label="Copy URL">
                   <Icon name={'chain'} size="1rem" />
                 </button>
               </div>
