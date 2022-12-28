@@ -63,16 +63,16 @@ const listens = {};
  *
  * This will set up any required log levels with a dedicated logger that outputs
  * logs for the given asset. */
-function setupLogger(config, name) {
+function setupLogger(logConfig, name) {
   // Already configured if we don't want to log to the console at all.
-  if (config.console === false) {
+  if (logConfig.console === false) {
     return;
   }
 
   // Set up a logger from the lowest level up to and including the desired log
   // level.
-  const timestamp = () => format(new Date(), config.timefmt);
-  for (let i = 0 ; i <= levels.indexOf(config.level) ; i++) {
+  const timestamp = () => format(new Date(), logConfig.timefmt);
+  for (let i = 0 ; i <= levels.indexOf(logConfig.level) ; i++) {
     const level = levels[i];
 
     log[level] = msg => console.log(`${timestamp()} [${level}] ${name}: ${msg}`);
@@ -145,11 +145,11 @@ export function __init_api(manifest, assetConfig, appConfig) {
 /* Transmit an event to all listeners in a specific bundle. The event will get
  * sent to all members of that bundle except the sender, which presumably does
  * not need to get a message to itself since it already knows the content. */
-export function sendMessageToBundle(event, bundle, data) {
-  assert(bundle !== undefined, 'valid bundle not specified');
+export function sendMessageToBundle(event, bundleName, data) {
+  assert(bundleName !== undefined, 'valid bundle not specified');
   assert(event !== undefined, 'message not specified');
 
-  socket.emit('message', { bundle, event, data });
+  socket.emit('message', { bundle: bundleName, event, data });
 }
 
 
@@ -177,34 +177,34 @@ export function sendMessage(event, data) {
  *
  * The return value is a function that you can use to remove the listener if
  * you no longer require it. */
-export function listenFor(event, bundle, listener) {
+export function listenFor(event, bundleName, listener) {
   assert(event !== undefined, 'message not specified');
 
   // If there is no listener, the bundle argument is actually the listener and
   // the bundle is inferred; hence we need at least one of the two set or the
   // call is missing too many arguments.
-  assert(bundle !== undefined || listener !== undefined, 'no event listener callback supplied');
+  assert(bundleName !== undefined || listener !== undefined, 'no event listener callback supplied');
 
   // Second argument is optional but listener is required; if the call signature
   // has only two arguments, infer the bundle and use it as the listener.
   if (listener === undefined) {
-    listener = bundle;
-    bundle = bundle.name;
+    listener = bundleName;
+    bundleName = bundle.name;
   }
 
   // Count this as an event listened for in this bundle.
-  listens[bundle] = (listens[bundle] === undefined) ? 1 : listens[bundle] + 1;
+  listens[bundleName] = (listens[bundleName] === undefined) ? 1 : listens[bundleName] + 1;
 
   // If this is not our bundle and this is the first listen on it, we need to
   // join that bundle's messaging group.
-  if (bundle !== bundle.name && listens[bundle] === 1) {
-    log.debug(`joining ${bundle}; listening for ${event} outside our bundle`);
-    socket.emit("join", bundle);
+  if (bundleName !== bundle.name && listens[bundleName] === 1) {
+    log.debug(`joining ${bundleName}; listening for ${event} outside our bundle`);
+    socket.emit("join", bundleName);
   }
 
   // Listen for the event; the return is the function to remove the listener.
-  log.silly(`listening for event: ${event}.${bundle}`);
-  const unlisten = bridge.on(`${event}.${bundle}`, (event) => listener(event.data));
+  log.silly(`listening for event: ${event}.${bundleName}`);
+  const unlisten = bridge.on(`${event}.${bundleName}`, (event) => listener(event.data));
 
   // When removing the listener, update the listen count and possibly leave a
   // bundle's messaging group if we no longer need it.
@@ -217,10 +217,10 @@ export function listenFor(event, bundle, listener) {
 
     // If this is not our bundle and this was our last listen, we can leave the
     // messaging group now.
-    listens[bundle]--;
-    if (bundle !== bundle.name && listens[bundle] === 0) {
-      log.debug(`leaving ${bundle}; no remaining events outside our bundle`);
-      socket.emit("leave", bundle);
+    listens[bundleName]--;
+    if (bundleName !== bundle.name && listens[bundleName] === 0) {
+      log.debug(`leaving ${bundleName}; no remaining events outside our bundle`);
+      socket.emit("leave", bundleName);
     }
   }
 }
