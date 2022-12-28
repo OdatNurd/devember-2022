@@ -11,6 +11,7 @@
         "file": "panel_one.html",
         "name": "panel-one",
         "title": "Fat Man",
+        "workspace": "WozSpace",
         "locked": true,
         "size": {
           "width": 4,
@@ -25,6 +26,7 @@
         "file": "other/panel_two.html",
         "name": "panel-two",
         "title": "Skinny Boy",
+        "workspace": "WozSpace",
         "size": {
           "width": 2,
           "height": 4
@@ -38,6 +40,7 @@
         "file": "other/panel_three.html",
         "name": "panel-three",
         "title": "Total Square",
+        "workspace": "WozSpace",
         "size": {
           "width": 2,
           "height": 2

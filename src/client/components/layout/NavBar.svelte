@@ -14,7 +14,7 @@
     <Logo size={36} />
     <div class="tabs ml-4">
       {#each workspaces as workspace (name)}
-        <a href="/dashboard/{workspace.slug}" use:link class="tab tab-lg tab-bordered">{workspace.name}</a>
+        <a href="/dashboard/{workspace.slug}" use:link class="tab tab-lg tab-bordered tab-active">{workspace.name}</a>
       {/each}
     </div>
   </div>

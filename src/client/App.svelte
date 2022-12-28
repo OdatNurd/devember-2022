@@ -13,21 +13,9 @@
   // ended up with a list of workspaces.
   const workspaces = [
     {
-      "name": "Bot",
-      "slug": "bot",
-    },
-    {
-      "name": "Editor",
-      "slug": "editor",
-    },
-    {
-      "name": "Logs",
-      "slug": "logs",
-    },
-    {
-      "name": "Setup",
-      "slug": "setup",
-    },
+      "name": "WozSpace",
+      "slug": "woz",
+    }
   ]
 </script>
 
