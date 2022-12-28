@@ -1,5 +1,5 @@
 ---
-title: appConfig
+title: config
 ---
 
 This object is a copy of the full application configuration that the bundle is

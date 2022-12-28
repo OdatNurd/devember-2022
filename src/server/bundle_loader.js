@@ -238,7 +238,7 @@ async function loadBundleExtension(omphalos, manifest, bundleName) {
     ...omphalos,
 
     log: logger(bundleName),
-    bundleConfig: structuredClone(manifest),
+    bundle: structuredClone(manifest),
 
     // Directs a message to all listeners in the current bundle;
     sendMessage: (event, data) => omphalos.sendMessageToBundle(event, bundleName, data),

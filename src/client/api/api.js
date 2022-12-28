@@ -13,14 +13,14 @@ import EventBridge from '@axel669/event-bridge';
  * them comes from (except for the socket, which we make ourselves). */
 
 /* The overall application configuration information. */
-export let appConfig = {};
+export let config = {};
 
 /* The bundle manifest for the bundle this asset is stored in. */
-export let bundleInfo = {};
+export let bundle = {};
 
 /* The configuration object for this asset; this is taken from the bundle
  * info above, but is specific to the asset for which the API initialized. */
-export let assetConfig = {};
+export let asset = {};
 
 /* The websocket socket that we use to talk to the server. */
 export let socket = undefined;
@@ -36,8 +36,8 @@ const levels = ['error', 'warn', 'info', 'debug', 'silly'];
  * configuration. */
 export const log = {
   'error': () => {},
-  'warn': () => {},
-  'info': () => {},
+   'warn': () => {},
+   'info': () => {},
   'debug': () => {},
   'silly': () => {},
 };
@@ -91,21 +91,21 @@ function setupLogger(config, name) {
  *
  * This guards against repeated initialization and will throw an exception
  * if it is called when the API is already initialized. */
-export function __init_api(manifest, asset, config) {
+export function __init_api(manifest, assetConfig, appConfig) {
   // Guard against repeated calls; the socket is the fastest way to check.
   assert(socket === undefined, 'omphalos API is already initialized');
 
   // Save all of the incoming information.
-  bundleInfo = manifest;
-  assetConfig = asset;
-  appConfig = config;
+  bundle = manifest;
+  asset = assetConfig;
+  config = appConfig;
 
   // Set up our back-channel communications socket; this will keep itself
   // connected permanently.
   socket = getClientSocket();
 
   // Set up our log handling.
-  setupLogger(appConfig.logging, asset.name);
+  setupLogger(config.logging, asset.name);
 
   // When our socket connects, we need to announce ourselves to the server to
   // join the communications channel that is associated with our bundle, so that
@@ -161,7 +161,7 @@ export function sendMessageToBundle(event, bundle, data) {
 export function sendMessage(event, data) {
   assert(event !== undefined, 'message not specified');
 
-  sendMessageToBundle(event, bundleInfo.name, data);
+  sendMessageToBundle(event, bundle.name, data);
 }
 
 
@@ -189,7 +189,7 @@ export function listenFor(event, bundle, listener) {
   // has only two arguments, infer the bundle and use it as the listener.
   if (listener === undefined) {
     listener = bundle;
-    bundle = bundleInfo.name;
+    bundle = bundle.name;
   }
 
   // Count this as an event listened for in this bundle.
@@ -197,7 +197,7 @@ export function listenFor(event, bundle, listener) {
 
   // If this is not our bundle and this is the first listen on it, we need to
   // join that bundle's messaging group.
-  if (bundle !== bundleInfo.name && listens[bundle] === 1) {
+  if (bundle !== bundle.name && listens[bundle] === 1) {
     log.debug(`joining ${bundle}; listening for ${event} outside our bundle`);
     socket.emit("join", bundle);
   }
@@ -218,7 +218,7 @@ export function listenFor(event, bundle, listener) {
     // If this is not our bundle and this was our last listen, we can leave the
     // messaging group now.
     listens[bundle]--;
-    if (bundle !== bundleInfo.name && listens[bundle] === 0) {
+    if (bundle !== bundle.name && listens[bundle] === 0) {
       log.debug(`leaving ${bundle}; no remaining events outside our bundle`);
       socket.emit("leave", bundle);
     }

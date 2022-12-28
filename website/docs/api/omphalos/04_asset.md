@@ -1,5 +1,5 @@
 ---
-title: assetConfig
+title: asset
 ---
 
 :::warning Client only
@@ -14,3 +14,6 @@ of the API belongs.
 
 For a `panel` this is the object from the manifest that describes the panel,
 while for a `graphic` this is the object that defines the graphic.
+
+A key named `type` is added to this object, with a value that indicates what
+type of asset this is; `graphic` or `panel`.

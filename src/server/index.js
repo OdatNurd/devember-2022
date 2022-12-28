@@ -132,10 +132,10 @@ function makeTemplateAPIObject(io) {
 
     // The bundle configuration is specific to the bundle and is inserted when
     // a bundle is loaded.
-    bundleConfig: undefined,
+    bundle: undefined,
 
     // Application configuration
-    appConfig: config.getProperties(),
+    config: config.getProperties(),
 
     // Directs a message to all listeners in a specific bundle;
     sendMessageToBundle: (event, bundle, data) => {
