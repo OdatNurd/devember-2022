@@ -68,13 +68,19 @@ function spaErrorPage() {
  * This presupposes that the static file already has all of the required
  * resources in the required location, and all we need to do is inject the
  * script call that will initialize the API. */
-function spaTemplate(dom, version) {
+function spaTemplate(dom, bundles, version) {
   // Create a small stub manifest to pass in for API initialization; the only
   // part of this that is needed by the top level code is a faked up bundle
   // name that identifies us as the system bundle.
   const manifest = {
     name: "__omphalos_system__",
-    version
+    version,
+    "omphalos": {
+      "compatibleRange": `~${version}`,
+      "panelPath": "panels",
+      "graphicPath": "graphics",
+      "deps": bundles
+    }
   };
 
   // Create a fake asset entry; as above the only part of this that is needed is
@@ -266,7 +272,7 @@ async function launchServer() {
   // The list of top level pages is a known quanity; if there is a request for
   // one of them, serve the main page instead of an error page.
   const spaFile = resolve(config.get('baseDir'), 'www', 'index.html')
-  const templ = dom => spaTemplate(dom, manifest.version);
+  const templ = dom => spaTemplate(dom, bundles, manifest.version);
   app.get(/^\/(mixer|settings|graphics|dashboard|dashboard\/.*)[\/]?$/u,
     (req, res) => sendStaticTemplate(req, res, spaFile, spaErrorPage, templ));
 
