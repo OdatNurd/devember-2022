@@ -9,6 +9,7 @@ documentation or code; however if you see the item here, that feature is not
 yet ready.
 
 1. Full Bleed Panels
+2. Single Instance Graphics
 2. Multiple Workspaces
 3. Save and restore panel layouts
 
