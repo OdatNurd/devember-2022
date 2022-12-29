@@ -83,6 +83,32 @@ function setupLogger(logConfig, name) {
 // =============================================================================
 
 
+/* This responds to an incoming request to reload an asset.
+ *
+ * If the request matches the current assets type and name, the asset will
+ * trigger a reload of itself.
+ *
+ * The message payload expected is:
+ *   {
+ *      "type": [<asset type names>],
+ *      "name": [<asset name>]
+ *   }
+ */
+function reloadAsset(req) {
+  assert(req.type !== undefined,  'reload request has no type list');
+  assert(Array.isArray(req.type), 'reload type list is not an array');
+  assert(req.name !== undefined,  'reload request has no name list');
+  assert(Array.isArray(req.name), 'reload name list is not an array');
+
+  if (req.type.indexOf(asset.type) !== -1 && req.name.indexOf(asset.name) !== -1) {
+    window.location.reload();
+  }
+}
+
+
+// =============================================================================
+
+
 /* Initializes the Omphalos API by providing information on the given bundle,
  * asset and application configuration.
  *
@@ -136,6 +162,12 @@ export function __init_api(manifest, assetConfig, appConfig) {
     log.silly(`emitting event: ${data.event}.${data.bundle}`)
     bridge.emit(`${data.event}.${data.bundle}`, data.data);
   });
+
+  // Assets that are panels and overlays should respond to a request to reload
+  // themselves when asked by the UI.
+  if (["panel", "graphic"].indexOf(asset.type) !== -1) {
+    listenFor('__sys_reload', (data) => reloadAsset(data));
+  }
 }
 
 

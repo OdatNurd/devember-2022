@@ -21,3 +21,10 @@ thus you only need to include it in the argument list when you want to listen
 for outside events.
 
 :::
+
+:::info reserved names
+
+Event names that start with `__sys` are reserved by Omphalos for system events;
+you should not use them in your own events.
+
+:::
