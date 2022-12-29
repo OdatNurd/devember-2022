@@ -18,6 +18,9 @@ load this file into mine.
 <button id="success">Success Toast</button>
 <button id="error">Error Toast</button>
 <hr />
+<button id="show-msg">Show Message</button>
+<button id="hide-msg">Hide Message</button>
+<hr />
 
 
 <script>
@@ -25,9 +28,14 @@ load this file into mine.
     btn.addEventListener('click', () => omphalos.sendMessage('click'));
 
     ['message', 'info', 'warning', 'success', 'error'].forEach(level => {
-        const element = document.querySelector(`#${level}`);
-        element.addEventListener('click', () => omphalos.toast(`This toast is of level: '${level}'`, level, 1.5));
-    })
+      const element = document.querySelector(`#${level}`);
+      element.addEventListener('click', () => omphalos.toast(`This toast is of level: '${level}'`, level, 1.5));
+    });
+
+    ['show-msg', 'hide-msg'].forEach(test => {
+      const element = document.querySelector(`#${test}`);
+      element.addEventListener('click', () => omphalos.sendMessage(test));
+    });
 </script>
 </body>
 </html>

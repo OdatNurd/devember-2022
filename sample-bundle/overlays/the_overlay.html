@@ -4,9 +4,42 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>The Overlay Lives Here</title>
+    <style type="text/css">
+        .hidden {
+            display: none;
+        }
+        body {
+            font-size: 72px;
+        }
+    </style>
 </head>
 <body>
-There are many overlays; and I mean a lot, because apparently all OdatNurd does
-is think of new ways to get overlays to load into OBS. This is one of those.
+
+<p id='msg-text' class='hidden'>
+    There are many overlays; and I mean a lot, because apparently all
+    OdatNurd does is think of new ways to get overlays to load into OBS. This is
+    one of those.
+</p>
+
+<script>
+    const msg = document.querySelector('#msg-text');
+
+    omphalos.listenFor('show-msg', () => {
+        if (msg.classList.contains('hidden')) {
+            msg.classList.remove('hidden')
+            omphalos.toast('Displayed the message in the overlay');
+        } else {
+            omphalos.toast('The message is already visible', 'warning');
+        }
+    });
+    omphalos.listenFor('hide-msg', () => {
+        if (msg.classList.contains('hidden') === false) {
+            msg.classList.add('hidden')
+            omphalos.toast('Hid the message in the overlay');
+        } else {
+            omphalos.toast('The message is already hidden', 'warning');
+        }
+    });
+</script>
 </body>
 </html>
