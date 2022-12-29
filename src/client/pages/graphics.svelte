@@ -11,6 +11,26 @@
     return `${window.location.origin}/bundles/${bundle.name}/graphics/${graphic.file}`;
   }
 
+  // Reload either the specific graphic from a bundle or, if the graphic is not
+  // given, all graphics in the bundle.
+  const reloadGraphic = (bundle, graphic) => {
+    // If there is a graphic, that's the one to load, otherwise get the list of
+    // all graphics in the bundle.
+    if (graphic !== undefined) {
+      omphalos.toast(`Reloading: ${graphic}`, 'info', 2);
+      graphic = [graphic];
+    } else {
+      omphalos.toast(`Reloading: all graphics in ${bundle}`, 'info', 2);;
+      graphic = bundles.filter(b => b.name === bundle)[0].graphics.map(g => g.name)
+    }
+
+    // Ship off an event to trigger the reload.
+    omphalos.sendMessageToBundle('__sys_reload', bundle, {
+      "type": ["graphic"],
+      "name": graphic
+    });
+  }
+
   // Copy the full URL for a graphic to the clipboard.
   const copyUrl = (bundle, graphic) => {
     navigator.clipboard.writeText(graphicURL(bundle, graphic));
@@ -31,7 +51,7 @@
         <div class="font-bold wrapper-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
           <span class="text-xl">{bundle.name}</span>
           <div class="tooltip tooltip-bottom" data-tip="Reload all graphics in this bundle">
-            <button class="btn btn-circle btn-xs btn-primary" aria-label="Reload All Graphics">
+            <button on:click={() => reloadGraphic(bundle.name)} class="btn btn-circle btn-xs btn-primary" aria-label="Reload All Graphics">
               <Icon name={'rotate-right'} size="0.75rem" />
             </button>
           </div>
@@ -60,7 +80,7 @@
                 </div>
 
                 <div class="tooltip tooltip-bottom" data-tip="Reload this graphic">
-                  <button class="btn btn-circle btn-primary ml-1" aria-label="Reload this graphic">
+                  <button on:click={() => reloadGraphic(bundle.name, graphic.name)} class="btn btn-circle btn-primary ml-1" aria-label="Reload this graphic">
                     <Icon name={'rotate-right'} size="1rem" />
                   </button>
                 </div>
