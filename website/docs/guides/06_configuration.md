@@ -123,4 +123,26 @@ which case they are treated as regular expressions.
 }
 ```
 
+## developerMode
+
+* environment variable: ***DEVELOPER_MODE***
+* default: `false`
+
+Controls whether developer mode is enabled or not. Generally speaking, you
+probably don't need to have this turned on unless you are having issues and a
+developer asks you to turn it on.
+
+With this turned on:
+  * Dashboard panels have reload buttons to individually reload them.
+
+:::warning
+
+This option is primarily for use while developing Omphalos; if you are an
+advanced user you may also find it useful as well, so long as you keep in mind
+that the user experience will be different as a result of turning this on.
+
+:::
+
+
+
   [1]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS

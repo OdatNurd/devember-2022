@@ -12,6 +12,10 @@
   // are reserved.
   "port": 3000,
 
+  // When in developer mode, various aspects of the user interface are
+  // different. See the documentation for full details.
+  "developerMode": false,
+
   // When the application loads, the list of available bundles is scanned and
   // all eligible bundles are loaded. These configuration options allow you to
   // specify the path to bundles to load that are outside of the bundles folder,

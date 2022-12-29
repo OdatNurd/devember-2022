@@ -59,6 +59,16 @@ export const config = convict({
     default: ''
   },
 
+  // When in developer mode, extra controls and logs are present which are not
+  // normally available. This is useful during development and possibly also for
+  // more advanced users.
+  developerMode: {
+    doc: 'Controls developer mode, which enables extra logging and controls',
+    format: Boolean,
+    env: 'DEVELOPER_MODE',
+    default: false
+  },
+
   // The port that the internal web server listens for connections on.
   port: {
     doc: 'The port that the server should listen on',
