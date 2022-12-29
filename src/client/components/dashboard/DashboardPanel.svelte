@@ -40,6 +40,15 @@
   // When true, the content area of the panel is blocked; no interaction with
   // it is possible.
   export let blocked = false;
+
+  // Trigger an event to reload this panel.
+  const reload = () => {
+    console.log('BOOM', bundle, name);
+    omphalos.sendMessageToBundle('__sys_reload', bundle, {
+      "type": ["panel"],
+      "name": [name]
+    });
+  }
 </script>
 
 
@@ -54,10 +63,24 @@
                              >
   <div class="grid-stack-item-content rounded-tl-lg rounded-br-lg border-neutral-focus border-4">
     <div class="grid-stack-item-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
-      {title}
-      <a target="_blank" rel="nofollow noreferrer" href={`/bundles/${bundle}/panels/${content}`} class="btn btn-xs btn-circle btn-primary" aria-label="Open In New Tab">
-        <Icon name={'up-right-from-square'} size="0.75rem" />
-      </a>
+      <span>{title}</span>
+
+      <div class="flex">
+        {#if omphalos.config.developerMode}
+          <div class="tooltip tooltip-left" data-tip="Reload this panel">
+            <button on:click={reload} class="btn btn-circle btn-xs btn-primary" aria-label="Reload Panel">
+              <Icon name={'rotate-right'} size="0.75rem" />
+            </button>
+          </div>
+        {/if}
+
+        <div class="tooltip tooltip-left" data-tip="Reload this panel">
+          <a target="_blank" rel="nofollow noreferrer" href={`/bundles/${bundle}/panels/${content}`} class="btn btn-xs btn-circle btn-primary" aria-label="Open In New Tab">
+            <Icon name={'up-right-from-square'} size="0.75rem" />
+          </a>
+        </div>
+      </div>
+
     </div>
     <div class="panel-content bg-neutral text-neutral-content p-0 m-0 h-full w-full relative rounded-br-lg border-neutral-focus border-1">
       <iframe src={`/bundles/${bundle}/panels/${content}`} {title}> </iframe>
