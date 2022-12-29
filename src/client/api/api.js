@@ -245,7 +245,22 @@ export function toast(msg, level, timeout_secs) {
   assert(msg !== undefined, 'no toast message text given');
   assert(levels.indexOf(level) !== -1, `unknown toast level '${level}'`);
 
-  sendMessageToBundle('toast', '__omphalos_system__', { toast: msg, level, timeout: timeout_secs * 1000 });
+  // Convert from seconds to milliseconds for the call through.
+  if (timeout_secs !== undefined) {
+    timeout_secs *= 1000;
+  }
+
+  // If we're the system asset, instead of sending a message off just  raise the
+  // toast event, since the system will not deliver back to us.
+  //
+  // This is to facilitate debugging; the system generally doesn't need to do
+  // anything relating to the API.
+  if (asset.type === 'system') {
+    bridge.emit('toast.__omphalos_system__', { toast: msg, level, timeout: timeout_secs });
+    return
+  }
+
+  sendMessageToBundle('toast', '__omphalos_system__', { toast: msg, level, timeout: timeout_secs });
 }
 
 
