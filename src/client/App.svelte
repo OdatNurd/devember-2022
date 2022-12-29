@@ -1,13 +1,18 @@
 <script>
-  import { Router, Route } from 'svelte-navigator';
-
   import { NavBar, Toaster } from '$components';
+
+  import { Router, Route } from 'svelte-navigator';
+  import { toast } from '$lib/toast.js'
 
   import Index from '$pages/index.svelte';
   import Graphics from '$pages/graphics.svelte';
   import Mixer from '$pages/mixer.svelte';
   import Settings from '$pages/settings.svelte';
   import Error404 from '$pages/404.svelte';
+
+  // Listen for incoming toast requests from the system and dispatch them. This
+  // relies on the fact that the payload is verified on the other end.
+  omphalos.listenFor('toast', data => toast[data.level](data.toast, data.timeout));
 
   // Pretend we did some sort of web request here as a part of the init, and we
   // ended up with a list of workspaces.

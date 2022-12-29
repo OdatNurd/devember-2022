@@ -1,5 +1,5 @@
 <script>
-  import { toast } from '$lib/toast.js'
+
 
   import DashboardPanel from './DashboardPanel.svelte';
 
@@ -12,9 +12,7 @@
   // mouse interaction.
   let blocked = false;
 
-  // Listen for incoming toast requests from the system and dispatch them. This
-  // relies on the fact that the payload is verified on the other end.
-  omphalos.listenFor('toast', data => toast[data.level](data.toast, data.timeout));
+
 
   const fetchUIPanels = async () => {
     const res = await fetch('/api/v1/panels');
