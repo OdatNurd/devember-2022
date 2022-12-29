@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="business">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,14 +9,6 @@
     <link rel="shortcut icon" type="image/jpg" href="/favicon.png">
     <script src="/socket.io/socket.io.js"></script>
     <script src="/omphalos-api.js"></script>
-    <script type="text/javascript">
-      // If the user specifically said that they wanted dark mode, or there is
-      // no preference but the OS says that the user prefers a dark color scheme,
-      // then turn on dark mode.
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.setAttribute('data-theme', 'business');
-      }
-    </script>
   </head>
   <body>
     <script src="/gridstack/gridstack-all.js"></script>
