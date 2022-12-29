@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Make the tooltips in Daisy actually work. */
+.tooltip::before {
+  z-index: 1;
+}

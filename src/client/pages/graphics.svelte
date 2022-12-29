@@ -30,8 +30,8 @@
         <!-- Per Bundle; this sets the name -->
         <div class="font-bold wrapper-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
           <span class="text-xl">{bundle.name}</span>
-          <div class="tooltip tooltip-bottom hover:z-20" data-tip="Reload all graphics in this bundle">
-            <button class="btn btn-xs btn-primary" aria-label="Reload All Graphics">
+          <div class="tooltip tooltip-bottom" data-tip="Reload all graphics in this bundle">
+            <button class="btn btn-circle btn-xs btn-primary" aria-label="Reload All Graphics">
               <Icon name={'rotate-right'} size="0.75rem" />
             </button>
           </div>
@@ -53,14 +53,14 @@
 
               <!-- Two buttons -->
               <div class="flex ml-2">
-                <div class="tooltip tooltip-bottom hover:z-20" data-tip="Copy URL">
-                  <button on:click={() => copyUrl(bundle, graphic)} class="btn btn btn-circle btn-primary ml-1" aria-label="Copy URL">
+                <div class="tooltip tooltip-bottom" data-tip="Copy URL">
+                  <button on:click={() => copyUrl(bundle, graphic)} class="btn btn-circle btn-primary ml-1" aria-label="Copy URL">
                     <Icon name={'chain'} size="1rem" />
                   </button>
                 </div>
 
-                <div class="tooltip tooltip-bottom hover:z-20" data-tip="Reload this graphic">
-                  <button class="btn btn btn-circle btn-primary ml-1" aria-label="Reload this graphic">
+                <div class="tooltip tooltip-bottom" data-tip="Reload this graphic">
+                  <button class="btn btn-circle btn-primary ml-1" aria-label="Reload this graphic">
                     <Icon name={'rotate-right'} size="1rem" />
                   </button>
                 </div>
