@@ -13,11 +13,20 @@
   // the dashboard loaded.
   const panelList = loadWorkspaceState(omphalos.bundle, 'woz');
 
+  // The gridstack instance; this holds the panel and drives the schoolbus. It
+  // doesn't get created until the component is mounted, since it needs the DOM
+  // to be set up to work.
+  let grid = null;
+
+  // Whenever the state of any panels change, save the state into the local
+  // storage for later. This includes when panels move, resize or tell us that
+  // they have changed their own properties.
+  const saveLayout = () => saveWorkspaceState(grid, 'woz');
+
   // Once the components are all laid out, trigger the gridstack code to turn
   // on the magic.
   onMount(() => {
-    // The gridstack instance; this holds the panel and drives the schoolbus.
-    const grid = GridStack.init({
+    grid = GridStack.init({
       cellHeight: 'initial',
       float: true,
       margin: 4,
@@ -29,6 +38,12 @@
       disableOneColumnMode: false,
     });
 
+    // For debugging purposes, add the grid to the window while in developer
+    // mode so that we can poke it with a stick if needed.
+    if (window.omphalos.config.developerMode) {
+      window.grid = grid;
+    }
+
     // Resizing and moving are an issue with iframes in the page because if
     // the mouse covers them, the eat events. So, as long as we are dragging
     // or resizing, block the panels from being interactive.
@@ -38,7 +53,7 @@
       // If we're unblocking, save the state of the current layout; this is
       // either a size or a location change, but either way we want to know.
       if (blocked === false) {
-        saveWorkspaceState(grid, 'woz');
+        saveLayout()
       }
     });
   });
@@ -47,7 +62,7 @@
 <div class="grid-holder">
   <div class="grid-stack">
     {#each panelList as panel (panel.name)}
-      <DashboardPanel {...panel} {blocked} />
+      <DashboardPanel on:update={saveLayout} {...panel} {blocked} {grid} />
     {/each}
   </div>
 </div>

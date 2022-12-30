@@ -1,8 +1,19 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
+
   import Icon from '../Icon.svelte';
 
-  export let title = 'title goes here';
-  export let content = 'content goes here';
+  // For sending events to our parent.
+  const dispatch = createEventDispatcher();
+
+  // The grid that owns us and our panel component. The grid is a property we're
+  // given when it is set up, and the panel represents our component in the
+  // DOM when we mount
+  export let grid = null;
+  let panel = null;
+
+  export let title = 'Untitled';
+  export let content = 'missing.html';
 
   // The bundle the panel is from and the name that it has within that bundle;
   // taken together these are used to construct a unique identifier for this
@@ -31,23 +42,73 @@
   // If a panel is locked, it won't automatically move around while other things
   // are being resized or moved. The user can still move and resize; use the
   // below options if you also want to constrain that.
+  //
+  // This is conveyed in the caption as a pushpin/circle.
   export let locked = false;
 
-  // Stop this panel from being resized or moved BY THE USER
-  export let noResize = false;
+  // Stop this panel from being resized or moved BY THE USER.
+  //
+  // This is conveyed in the caption as a padlock; unlocked means this can be
+  // moved around, locked means it cannot.
   export let noMove = false;
+
+  // When this is true, the panel does not allow you to resize it. We turn this
+  // on whenever the minimum and maximum width are the same value, since that
+  // is an indication that the panel is intended to be a set size.
+  export let noResize = false;
 
   // When true, the content area of the panel is blocked; no interaction with
   // it is possible.
   export let blocked = false;
 
+  // Returns true if this panel cannot be resized because the dimension
+  // contraints are all identical.
+  const cannotResize = () => {
+    return width === minWidth && width === maxWidth &&
+           height === minHeight && height === maxHeight;
+  }
+
+  // On initial load, force noResize to be turned on if the dimensions say that
+  // the panel can't be resized. Otherwise it will have handles but they will
+  // do nothing, which is offputting since the block overlay will turn on in
+  // that case.
+  if (cannotResize() === true) {
+    noResize = true;
+  }
+
   // Trigger an event to reload this panel.
   const reload = () => {
-    console.log('BOOM', bundle, name);
     omphalos.sendMessageToBundle('__sys_reload', bundle, {
       "type": ["panel"],
       "name": [name]
     });
+  }
+
+  // Toggle the pinned state on the panel; when pinned, the system can't bump
+  // panels out of the way, but the user can move them if they like.
+  const pin = () => {
+    locked = !locked;
+
+    grid.update(panel, { locked });
+    dispatch('update');
+  }
+
+  // Toggle the locked state n the panel; when locked, you cannot move or resize
+  // a panel manually (but it may still move out of the way automatically if  it
+  // is not pinned).
+  const lock = () => {
+    noMove = !noMove;
+
+    // If we just locked movement, also lock resizing; otherwise, set the state
+    // of being able to resize based on wether or not the dimensions allow it.
+    if (noMove === true) {
+      noResize = true;
+    } else {
+      noResize = cannotResize();
+    }
+
+    grid.update(panel, { noResize, noMove });
+    dispatch('update');
   }
 </script>
 
@@ -60,24 +121,36 @@
                              gs-locked={locked}
                              gs-no-resize={noResize}
                              gs-no-move={noMove}
-                             >
+                             bind:this={panel}>
   <div class="grid-stack-item-content rounded-tl-lg rounded-br-lg border-neutral-focus border-4">
     <div class="grid-stack-item-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
       <span>{title}</span>
 
       <div class="flex">
-        {#if omphalos.config.developerMode}
-          <div class="tooltip tooltip-left" data-tip="Reload this panel">
+        {#if window.omphalos.config.developerMode}
+          <div class="tooltip tooltip-left" data-tip="Reload">
             <button on:click={reload} class="btn btn-circle btn-xs btn-primary" aria-label="Reload Panel">
               <Icon name={'rotate-right'} size="0.75rem" />
             </button>
           </div>
         {/if}
 
-        <div class="tooltip tooltip-left" data-tip="Reload this panel">
+        <div class="tooltip tooltip-left" data-tip="Open">
           <a target="_blank" rel="nofollow noreferrer" href={`/bundles/${bundle}/panels/${content}`} class="btn btn-xs btn-circle btn-primary" aria-label="Open In New Tab">
             <Icon name={'up-right-from-square'} size="0.75rem" />
           </a>
+        </div>
+
+        <div class="tooltip tooltip-left" data-tip={locked ? 'Unpin' : 'Pin'}>
+          <button on:click={pin} class="btn btn-xs btn-circle btn-primary" aria-label="Pin/Unpin this panel">
+            <Icon name={locked ? 'circle' : 'thumbtack'} size="0.75rem" />
+          </button>
+        </div>
+
+        <div class="tooltip tooltip-left" data-tip={noMove ? 'Unlock' : 'Lock'}>
+          <button on:click={lock} class="btn btn-xs btn-circle btn-primary" aria-label="Pin/Unpin this panel">
+            <Icon name={noMove ? 'lock' : 'lock-open'} size="0.75rem" />
+          </button>
         </div>
       </div>
 

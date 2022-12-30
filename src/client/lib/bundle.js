@@ -1,43 +1,3 @@
-// =============================================================================
-
-
-/* Given a panel specification from the manifest, conform the shape of the panel
- * object to match what the front end requires.
- *
- * Part of this shape change will drop minimum and maximum dimension constraints
- * if they are identical to the original size, in favor of just marking the
- * panel as not being resizable. */
-function conformManifestPanel(bundle, panel) {
-  const out = {
-    bundle,
-    title: panel.title,
-    content: panel.file,
-    name: panel.name,
-    locked: panel.locked ?? false,
-
-    width: panel.size.width,
-    height: panel.size.height,
-
-    minWidth: panel.minSize?.width,
-    minHeight: panel.minSize?.height,
-    maxWidth: panel.maxSize?.width,
-    maxHeight: panel.maxSize?.height,
-  }
-
-  // If the panels min, max and current dimensions are all the same, then remove
-  // the constraints and just make the panel unresizable instead.
-  if (out.width === out.minWidth && out.width === out.maxWidth &&
-      out.height === out.minHeight && out.height === out.maxHeight) {
-    // Remove the size constraits and replace them with an explicit instruction
-    // instead.
-    out.minWidth = out.maxWidth = undefined;
-    out.minHeight = out.maxHeight = undefined;
-    out.noResize = true;
-  }
-
-  return out;
-}
-
 
 // =============================================================================
 
@@ -56,7 +16,23 @@ function getManifestPanels(sysBundle) {
   // them.
   for (const [bundle, manifest] of Object.entries(sysBundle.omphalos.deps)) {
     const bundle_panels = manifest.omphalos.panels ?? [];
-    panel_list.push(...bundle_panels.map(panel => conformManifestPanel(bundle, panel)));
+    panel_list.push(...bundle_panels.map(panel => {
+      return {
+        bundle,
+        title: panel.title,
+        content: panel.file,
+        name: panel.name,
+        locked: panel.locked ?? false,
+
+        width: panel.size.width,
+        height: panel.size.height,
+
+        minWidth: panel.minSize?.width,
+        minHeight: panel.minSize?.height,
+        maxWidth: panel.maxSize?.width,
+        maxHeight: panel.maxSize?.height,
+      }
+    }));
   }
 
   return panel_list
@@ -94,7 +70,10 @@ export function saveWorkspaceState(grid, workspace) {
         "width": panel.w,
         "height": panel.h,
         "x": panel.x,
-        "y": panel.y
+        "y": panel.y,
+        "locked": panel.locked,
+        "noMove": panel.noMove,
+        "noResize": panel.noResize
       }
 
       // Store the bundle information back in case we just created it.
