@@ -6,8 +6,6 @@ import { assert } from '#api/assert';
 import { loadBundles } from '#core/bundle_loader';
 import { setupSocketIO, dispatchMessageEvent } from '#core/network';
 
-import fileRoutes from '@labyrinthos/file-routes/express';
-
 import { sendStaticTemplate } from '#core/static';
 
 import { Server } from 'socket.io';
@@ -263,11 +261,6 @@ async function launchServer() {
     req.bundles = bundles;
     next()
   });
-
-  // Use the file router to set up the routes for the back end services that
-  // we expose to the UI; this requires that the list of bundles has been added
-  // to requests via middleware.
-  app.use(await fileRoutes("src/server/routes"));
 
   // The list of top level pages is a known quanity; if there is a request for
   // one of them, serve the main page instead of an error page.
