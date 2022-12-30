@@ -11,7 +11,7 @@
   export let name = 'unnamed'
 
   // The ID value of the bundle comes from its name and bundle combination
-  let id = `${bundle}.${name}`;
+  let id = `${name}.${bundle}`;
 
   // Position of the panel; if either option is not provided, the position for
   // that axis is automatically set; so you can set x, y or both.

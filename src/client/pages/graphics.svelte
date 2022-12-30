@@ -2,9 +2,9 @@
   import { Content, Icon } from '$components';
 
   import { toast } from '$lib/toast.js'
-  import { graphicsList } from '$lib/bundle.js';
+  import { getGraphicsList } from '$lib/bundle.js';
 
-  const bundles = graphicsList(omphalos.bundle);
+  const bundles = getGraphicsList(omphalos.bundle);
 
   // Obtain the full URL for a graphic
   const graphicURL = (bundle, graphic) => {
