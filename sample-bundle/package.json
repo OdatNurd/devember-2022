@@ -42,16 +42,16 @@
         "title": "Total Square",
         "workspace": "WozSpace",
         "size": {
-          "width": 2,
-          "height": 2
+          "width": 3,
+          "height": 3
         },
         "minSize": {
-          "width": 2,
-          "height": 2
+          "width": 3,
+          "height": 3
         },
         "maxSize": {
-          "width": 2,
-          "height": 2
+          "width": 3,
+          "height": 3
         }
       }
     ],

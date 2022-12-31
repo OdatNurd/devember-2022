@@ -50,25 +50,29 @@ export function setupSocketIO(io) {
   // connections. This sets up the socket specific handlers that allow us to
   // manage our communications.
   io.on('connection', socket => {
-    log.silly(`connection: ${socket.id}`);
+    log.silly(`CONNECT: ${socket.id}`);
 
     // Handle disconnects; for graphics this needs to update state that is used
     // in the UI so that the graphic display can indicate connection status.
     socket.on('disconnect', () => {
-      log.silly(`disconnection: ${socket.id}`)
+      log.silly(`DISCONNECT: ${socket.id}`)
     });
 
     // Our messaging system from client to client comes through us and directs
     // traffic at specific bundles. To that end clients need to join and leave
     // the transmission groups of messages as they deem neccessary.
     socket.on("join", bundle => {
-      log.debug(`socket joining '${bundle}': ${socket.id}`);
+      log.debug(`JOIN: ${bundle}: ${socket.id}`);
       socket.join(bundle);
     });
 
-    socket.on("leave", bundle => {
-      log.debug(`socket leaving '${bundle}': ${socket.id}`);
+    socket.on("part", bundle => {
+      log.debug(`PART: ${bundle}: ${socket.id}`);
       socket.leave(bundle);
+    });
+
+    socket.on("hello", data => {
+      log.debug(`HELLO: ${data.type}.${data.name}.${data.bundle} => ${socket.id}`)
     });
 
     // Handle an incoming message from the remote end; these are in a very
@@ -85,7 +89,7 @@ export function setupSocketIO(io) {
     // required and is the actual message being sent (which is defined at the
     // user level); the data payload is optional.
     socket.on('message', msgData => {
-      log.silly(`incoming message: ${JSON.stringify(msgData)}`);
+      log.silly(`MSG: ${JSON.stringify(msgData)}`);
 
       const { bundle, event, data } = msgData;
 

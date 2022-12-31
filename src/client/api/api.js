@@ -1,4 +1,5 @@
-import { getClientSocket } from '#api/socket';
+import { getClientSocket, hello, join, part, message } from '#api/socket';
+
 import { assert } from '#api/assert';
 import { format } from 'fecha';
 
@@ -41,7 +42,6 @@ export const log = {
   'debug': () => {},
   'silly': () => {},
 };
-
 
 /* The global event object that we use to dispatch and listen for all of our
  * events. */
@@ -139,9 +139,10 @@ export function __init_api(manifest, assetConfig, appConfig) {
   socket.on('connect', () => {
     log.debug(`connection for ${asset.name}:${manifest.name} established on ${socket.id}`);
 
-    // As soon as we connect, send a message to tell the server to join us to
-    // events transmitted to our bundle.
-    socket.emit("join", manifest.name);
+    // As soon as we connect, tell the server who we are and ask to be given
+    // events from our bundle.
+    hello(socket, asset, bundle)
+    join(socket, bundle.name)
   });
 
   // Dispatch incoming messages. They should have a structure of:
@@ -181,7 +182,7 @@ export function sendMessageToBundle(event, bundleName, data) {
   assert(bundleName !== undefined, 'valid bundle not specified');
   assert(event !== undefined, 'message not specified');
 
-  socket.emit('message', { bundle: bundleName, event, data });
+  message(socket, bundleName, event, data);
 }
 
 
@@ -231,7 +232,7 @@ export function listenFor(event, bundleName, listener) {
   // join that bundle's messaging group.
   if (bundleName !== bundle.name && listens[bundleName] === 1) {
     log.debug(`joining ${bundleName}; listening for ${event} outside our bundle`);
-    socket.emit("join", bundleName);
+    join(socket, bundleName);
   }
 
   // Listen for the event; the return is the function to remove the listener.
@@ -252,7 +253,7 @@ export function listenFor(event, bundleName, listener) {
     listens[bundleName]--;
     if (bundleName !== bundle.name && listens[bundleName] === 0) {
       log.debug(`leaving ${bundleName}; no remaining events outside our bundle`);
-      socket.emit("leave", bundleName);
+      part(socket, bundleName);
     }
   }
 }

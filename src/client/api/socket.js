@@ -1,3 +1,6 @@
+import { assert } from '#api/assert';
+
+
 // =============================================================================
 
 
@@ -32,6 +35,100 @@ export function getClientSocket() {
     // generally speaking).
     transports: ["websocket", "polling"]
   });
+}
+
+
+// =============================================================================
+
+
+/* Transmit a message to the remote end that announces who we are.
+ *
+ * The protocol between the client and the server on socket communications is
+ * that before the server will accept any messages from a client socket, that
+ * socket must first have announced itself.
+ *
+ *    event: 'hello'
+ *    data: {
+ *             bundle: <bundle-name-as-string>
+ *             name:   <asset-name-as-string>
+ *             type:   <asset-type-as-string>
+ *          }
+ */
+export function hello(socket, asset, bundle) {
+  assert(socket !== undefined, 'no socket provided to hello()');
+  assert(asset !== undefined, 'no asset provided to hello()');
+  assert(bundle !== undefined, 'no bundle provided to hello()');
+
+  socket.emit('hello', {
+    bundle: bundle.name,
+    name:   asset.name,
+    type:   asset.type
+  });
+}
+
+
+// =============================================================================
+
+
+/* Transmit a request to the remote end that tells it that we would like to
+ * receive events directed at the named bundle.
+ *
+ * The server will reject this message if this socket has not first announced
+ * itself via hello().
+ *
+ *    event: 'join'
+ *    data: <bundle-name-as-string>
+ */
+export function join(socket, bundleName) {
+  assert(socket !== undefined,     'no socket provided to join()');
+  assert(bundleName !== undefined, 'no bundleName provided to join()');
+
+  socket.emit("join", bundleName);
+}
+
+
+// =============================================================================
+
+
+/* Transmit a request to the remote end that tells it that we would like to stop
+ * receiving events directed at the named bundle.
+ *
+ * The server will reject this message if this socket has not first announced
+ * itself via hello().
+ *
+ *    event: 'leave'
+ *    data: <bundle-name-as-string>
+ */
+export function part(socket, bundleName) {
+  assert(socket !== undefined, 'no socket provided to part()');
+  assert(bundleName !== undefined, 'no bundleName provided to part()');
+
+  socket.emit("part", bundleName);
+}
+
+
+// =============================================================================
+
+
+/* Transmit a request to the remote end that tells it that we would like to
+ * receive events directed at the named bundle.
+ *
+ * The server will reject this message if this socket has not first announced
+ * itself via hello().
+ *
+ *     event: 'message'
+ *     data: {
+ *              bundle: <bundle-name-as-string>
+ *              event:  <event-name-as-string>
+ *              data:   <opaque-event-payload>
+ *           }
+ */
+export function message(socket, bundleName, event, data) {
+  assert(socket !== undefined, 'no socket provided to message()');
+  assert(bundleName !== undefined, 'no bundleName provided to message()');
+  assert(event !== undefined,  'no event provided to message()');
+
+  socket.emit('message', { bundle: bundleName, event, data });
 }
 
 
