@@ -15,6 +15,30 @@ const log = logger('network');
  * events. */
 const bridge = EventBridge();
 
+/* This tracks a list of incoming sockets and associates them with the info that
+ * is provided in a "hello" introduction message.
+ *
+ * In the object the keys are socket ID's and the value is the information about
+ * that particular client.
+ *
+ * Items are added on connect and dropped on disconnect. */
+const clients = {};
+
+
+// =============================================================================
+
+
+/* Given a socket instance, return back a string that describes who the other
+ * other end of the connection is. */
+function client_info(socket) {
+  const client = clients[socket.id];
+  if (client === undefined) {
+    return `??? (${socket.id})`;
+  }
+
+  return `${client.type}.${client.name}.${client.bundle}`;
+}
+
 
 // =============================================================================
 
@@ -55,24 +79,41 @@ export function setupSocketIO(io) {
     // Handle disconnects; for graphics this needs to update state that is used
     // in the UI so that the graphic display can indicate connection status.
     socket.on('disconnect', () => {
-      log.silly(`DISCONNECT: ${socket.id}`)
+      log.silly(`DISCONNECT: [${client_info(socket)}]`);
+
+      // Drop this client since their socket is now gone.
+      delete clients[socket.id];
     });
 
     // Our messaging system from client to client comes through us and directs
     // traffic at specific bundles. To that end clients need to join and leave
     // the transmission groups of messages as they deem neccessary.
     socket.on("join", bundle => {
-      log.debug(`JOIN: ${bundle}: ${socket.id}`);
-      socket.join(bundle);
+      if (clients[socket.id] !== undefined) {
+        log.debug(`JOIN: ${bundle}: [${client_info(socket)}]`);
+        socket.join(bundle);
+      } else {
+        log.warning(`JOIN: incoming request from unknown client (${socket.id}`);
+      }
     });
 
     socket.on("part", bundle => {
-      log.debug(`PART: ${bundle}: ${socket.id}`);
-      socket.leave(bundle);
+      if (clients[socket.id] !== undefined) {
+        log.debug(`PART: ${bundle}: [${client_info(socket)}]`);
+        socket.leave(bundle);
+      } else {
+        log.warning(`PART: incoming request from unknown client (${socket.id}`);
+      }
     });
 
     socket.on("hello", data => {
-      log.debug(`HELLO: ${data.type}.${data.name}.${data.bundle} => ${socket.id}`)
+      clients[socket.id] = {
+        type: data.type,
+        name: data.name,
+        bundle: data.bundle
+      };
+
+      log.debug(`HELO: [${client_info(socket)}]`)
     });
 
     // Handle an incoming message from the remote end; these are in a very
@@ -89,6 +130,11 @@ export function setupSocketIO(io) {
     // required and is the actual message being sent (which is defined at the
     // user level); the data payload is optional.
     socket.on('message', msgData => {
+      if (clients[socket.id] === undefined) {
+        log.warning(`MSG: incoming request from unknown client (${socket.id}`);
+        return;
+      }
+
       log.silly(`MSG: ${JSON.stringify(msgData)}`);
 
       const { bundle, event, data } = msgData;
