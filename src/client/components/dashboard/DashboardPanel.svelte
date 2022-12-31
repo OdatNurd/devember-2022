@@ -123,7 +123,7 @@
                              gs-no-move={noMove}
                              bind:this={panel}>
   <div class="grid-stack-item-content rounded-tl-lg rounded-br-lg border-neutral-focus border-4">
-    <div class="grid-stack-item-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
+    <div class:noMove class="grid-stack-item-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
       <span>{title}</span>
 
       <div class="flex">
@@ -163,6 +163,10 @@
 </div>
 
 <style>
+  .noMove {
+    cursor: not-allowed !important;
+  }
+
   /* The wrapper div that gridstack uses to control this item. This is the
    * overall container for the whole panel.. */
   .grid-stack-item {
