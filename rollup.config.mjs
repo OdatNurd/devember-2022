@@ -21,6 +21,7 @@ export default [
         paths: {
           $components: "src/client/components/index.js",
           $pages: "src/client/pages",
+          $stores: "src/client/stores",
           $lib: "src/client/lib",
         },
         extensions: [".js", ".mjs", ".svelte", ".jsx"]

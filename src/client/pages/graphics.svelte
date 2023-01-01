@@ -1,10 +1,9 @@
 <script>
   import { Content, Icon } from '$components';
 
-  import { toast } from '$lib/toast.js'
-  import { getGraphicsList } from '$lib/bundle.js';
+  import { graphics } from '$stores/graphics.js';
 
-  const bundles = getGraphicsList(omphalos.bundle);
+  import { toast } from '$lib/toast.js'
 
   // Obtain the full URL for a graphic
   const graphicURL = (bundle, graphic) => {
@@ -21,7 +20,7 @@
       graphic = [graphic];
     } else {
       omphalos.toast(`Reloading: all graphics in ${bundle}`, 'info', 2);;
-      graphic = bundles.filter(b => b.name === bundle)[0].graphics.map(g => g.name)
+      graphic = $graphics.filter(b => b.name === bundle)[0].graphics.map(g => g.name)
     }
 
     // Ship off an event to trigger the reload.
@@ -41,12 +40,12 @@
 <Content>
   <div class="wrapper rounded-tl-lg rounded-br-lg border-neutral-focus border-4 min-w-[50%]">
 
-    {#if bundles.length === 0}
-        <div class="font-bold wrapper-title bg-primary text-primary-content rounded-tl-lg rounded-br-lg border-neutral-focus border-1 p-1">
-          <span class="text-xl">No loaded bundles contain graphics</span>
-        </div>
+    {#if $graphics.length === 0}
+      <div class="font-bold wrapper-title bg-primary text-primary-content rounded-tl-lg rounded-br-lg border-neutral-focus border-1 p-1">
+        <span class="text-xl">No loaded bundles contain graphics</span>
+      </div>
     {:else}
-      {#each bundles as bundle (name)}
+      {#each $graphics as bundle (name)}
         <!-- Per Bundle; this sets the name -->
         <div class="font-bold wrapper-title bg-primary text-primary-content rounded-tl-lg border-neutral-focus border-1 p-1">
           <span class="text-xl">{bundle.name}</span>
@@ -66,7 +65,7 @@
             <div class="flex justify-between px-4 mt-2 py-2 bg-secondary text-secondary-content">
               <!-- Load count, link and size -->
               <div class="flex flex-grow items-center justify-between">
-                <div class="flex-none px-2">--</div>
+                <div class="flex-none px-2">{graphic.count}</div>
                 <div class="font-bold underline flex-grow"><a target="_blank" rel="nofollow noreferrer" href="{graphicURL(bundle, graphic)}">{graphic.file}</a></div>
                 <h3 class="flex-none">{graphic.size.width}x{graphic.size.height}</h3>
               </div>
