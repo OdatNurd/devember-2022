@@ -24,6 +24,11 @@ const bridge = EventBridge();
  * Items are added on connect and dropped on disconnect. */
 const clients = {};
 
+/* When we send updates of connection state to the front end code, we debounce
+ * the call to ensure we don't slam the other end with updates. This is the
+ * handle for the update timer used there. */
+let updateTimerID = undefined;
+
 
 // =============================================================================
 
@@ -37,6 +42,52 @@ function client_info(socket) {
   }
 
   return `${client.type}.${client.name}.${client.bundle}`;
+}
+
+
+// =============================================================================
+
+
+/* Using a debounced call, transmit out an event to the dashboard to give it
+ * an update on the current connection state of all panels and graphics.
+ *
+ * This takes the form of an object similar to:
+ *
+ *   {
+ *     "bundleNameHere": {
+ *       "graphic": {
+ *         "graphicName": count
+ *       },
+ *       "panel": {
+ *         "panelName": count
+ *       }
+ *     }
+ *   }
+ */
+function sendConnectionUpdate(io) {
+  const gatherUpdate = () => {
+    // Construct an update object that will convey to the front end the
+    // connection status for everything.
+    const result = {};
+    for (const [sockID, client] of Object.entries(clients)) {
+      const bundle = result[client.bundle] = result[client.bundle] ?? {};
+      const asset = bundle[client.type] = bundle[client.type] ?? {};
+      const count = asset[client.name] = (asset[client.name] ?? 0) + 1;
+    }
+
+    // Send an update message to tell the other end about what is currently
+    // connected to us.
+    // Send the crap
+    io.to('__omphalos_system__').emit('message', {
+      bundle: '__omphalos_system__',
+      event: '__sys_socket_upd',
+      data: result
+    });
+  };
+
+  // Clear out any existing pending update, and then schedule a new one
+  clearTimeout(updateTimerID)
+  updateTimerID = setTimeout(() => gatherUpdate(), 1000);
 }
 
 
@@ -81,8 +132,12 @@ export function setupSocketIO(io) {
     socket.on('disconnect', () => {
       log.silly(`DISCONNECT: [${client_info(socket)}]`);
 
-      // Drop this client since their socket is now gone.
-      delete clients[socket.id];
+      // If this is a client that exists in the list, then schedule an update to
+      // tell the front end that connection state changed.
+      if (clients[socket.id] !== undefined) {
+        delete clients[socket.id];
+        sendConnectionUpdate(io);
+      }
     });
 
     // Our messaging system from client to client comes through us and directs
@@ -113,7 +168,10 @@ export function setupSocketIO(io) {
         bundle: data.bundle
       };
 
-      log.debug(`HELO: [${client_info(socket)}]`)
+      log.debug(`HELO: [${client_info(socket)}]`);
+
+      // Schedule an update on a new list of connections
+      sendConnectionUpdate(io);
     });
 
     // Handle an incoming message from the remote end; these are in a very
@@ -146,6 +204,11 @@ export function setupSocketIO(io) {
       dispatchMessageEvent(bundle, event, data);
     })
   });
+
+  // The system has a set of predefined messages that are always in effect and
+  // which are used by the dashboard; listen for the ones that the client side
+  // can send us so that we can handle them.
+  listenFor('__sys_send_socket_upd', '__omphalos_system__', () => sendConnectionUpdate(io));
 }
 
 

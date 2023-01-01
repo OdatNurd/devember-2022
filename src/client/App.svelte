@@ -14,6 +14,10 @@
   // relies on the fact that the payload is verified on the other end.
   omphalos.listenFor('toast', data => toast[data.level](data.toast, data.timeout));
 
+  // Listen for incoming broadcasts telling us about the connection state of
+  // bundle assets.
+  omphalos.listenFor('__sys_socket_upd', data => console.log('socket update: ', data));
+
   // Pretend we did some sort of web request here as a part of the init, and we
   // ended up with a list of workspaces.
   const workspaces = [
