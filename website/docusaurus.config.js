@@ -51,11 +51,11 @@ const config = {
 
     ({
       announcementBar: {
-        id: 'in_devember_dev',
-        content: 'During Devember 2022, development of Omphalos is happening daily LIVE on my <a target="_blank" rel="noopener noreferrer" href="https://twitch.tv/odatnurd">Twitch Channel</a>!',
-        backgroundColor: '#9147FF',
+        id: 'archived',
+        content: 'This is an old project! <a href="/docs/readme">read why</a>, then check out <a target="_blank" rel="noopener noreferrer" href="https://omphalos.ruinouspileofcrap.com">the full project</a>',
+        backgroundColor: '#C10009',
         textColor: '#fff',
-        isCloseable: true,
+        isCloseable: false,
       },
 
       colorMode: {
@@ -81,7 +81,7 @@ const config = {
           },
           {
             type: 'doc',
-            docId: 'quickstart/installation',
+            docId: 'readme',
             position: 'left',
             label: 'Docs',
           },
